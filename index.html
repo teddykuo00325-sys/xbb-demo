@@ -109,7 +109,8 @@ button[disabled]{opacity:.42; cursor:not-allowed}
   flex:none; display:flex; align-items:center; gap:8px;
   padding:10px 14px; border-bottom:1px solid var(--line); background:var(--surface);
 }
-.appbar .wordmark{font-size:.84rem; font-weight:700; letter-spacing:.04em; color:var(--indigo)}
+.appbar .wordmark{font-size:.84rem; font-weight:700; letter-spacing:.04em; color:var(--indigo);
+  background:none; border:none; padding:2px 0; border-radius:4px}
 .appbar .date{margin-left:auto; font-family:var(--font-mono); font-size:.68rem; color:var(--muted)}
 .appbar .cog{
   background:none; border:none; padding:2px 4px; font-size:.68rem;
@@ -201,6 +202,21 @@ input:focus-visible,textarea:focus-visible{outline:2px solid var(--indigo); outl
   border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--ink); min-width:0; text-align:left}
 .careform .btn{grid-column:1 / -1}
 input.mini{width:auto; max-width:9.5rem; padding:5px 7px; font-size:.74rem}
+
+.spark{width:100%; height:auto; display:block}
+input[type=number]{font:inherit; font-size:.9rem; padding:9px 11px; border-radius:10px; min-width:0;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink)}
+input[type=number]:focus-visible{outline:2px solid var(--indigo); outline-offset:1px}
+.sheet button.on{border-color:var(--indigo); font-weight:700}
+
+.docview{display:flex; flex-direction:column; gap:16px}
+.dochd{display:flex; flex-direction:column; gap:3px; padding-bottom:11px; border-bottom:2px solid var(--indigo)}
+.dochd b{font-size:1.45rem; line-height:1.3}
+.dochd span{font-size:.84rem; color:var(--muted)}
+.docview h3{margin:0 0 7px; font-size:.78rem; font-weight:700; letter-spacing:.08em; color:var(--indigo)}
+.docview .sumnote{font-size:.98rem; line-height:1.6}
+.docview .sumnote span{font-size:.8rem; padding-top:.2em}
+.docfoot{font-size:.78rem; color:var(--muted); line-height:1.6; border-top:1px solid var(--line); padding-top:10px; margin:0}
 
 .askbox{display:flex; flex-direction:column; gap:6px; padding:11px;
   background:var(--surface-2); border:1px solid var(--line); border-radius:9px}
@@ -323,7 +339,7 @@ footer{max-width:1160px; margin:30px auto 0; padding-top:16px; border-top:1px so
       <div class="notch"></div>
       <div class="app">
         <div class="appbar">
-          <span class="wordmark" id="wm">小本本</span>
+          <button type="button" class="wordmark" id="wm" title="切換毛孩">小本本</button>
           <span class="date" id="dt"></span>
           <button type="button" class="cog" id="cog">審閱</button>
         </div>
@@ -473,7 +489,7 @@ const md = s => s ? (+s.slice(5,7)) + "/" + (+s.slice(8,10)) : "";
 
 const FRESH = () => ({ v:1, pet:null, obDone:false,
   ob:{ state:"NAMING", attempt:1, replays:0, retryRound:1, played:[] },
-  log:[], stash:[], favs:[], customs:[], anims:[], care:[], careHist:[], day:{ date:null, played:0, earned:0 },
+  log:[], stash:[], favs:[], customs:[], anims:[], care:[], careHist:[], weights:[], day:{ date:null, played:0, earned:0 },
   dailyIdx:0, pro:false, testMode:false });
 const CUSTOM_FREE = 1;                 // 免費版自訂錄音 1 個，Pro 無限
 const COLLECT_UNLOCK = 6;              // 專屬聲音滿 6 個解鎖動畫
@@ -573,8 +589,59 @@ function addNote(text, quick){
 }
 
 let DB = FRESH();
-function load(){ try{ const r = localStorage.getItem(KEY); if(r){ const o = JSON.parse(r); if(o && o.v===1) DB = Object.assign(FRESH(), o); } }catch(e){} }   // 舊版存檔缺欄位就補預設值
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(DB)); }catch(e){} }
+/* 多貓：STORE 放所有毛孩，DB 永遠指向「目前這一隻」。
+   方案（pro）與測試模式是整個帳號的，不是每隻貓各自的，所以存在 STORE 層。 */
+const PET_FREE = 1;                    // 免費版 1 隻，Pro 無上限
+let STORE = null;                      // { v:2, cur, pets:{ id: 毛孩資料 }, pro, testMode }
+const freshStore = () => { const id = "p" + Date.now();
+  return { v:2, cur:id, pets:{ [id]: FRESH() }, pro:false, testMode:false }; };
+const petCount = () => Object.keys(STORE.pets).length;
+function bindCur(){
+  DB = Object.assign(FRESH(), STORE.pets[STORE.cur]);   // 舊版存檔缺欄位就補預設值
+  STORE.pets[STORE.cur] = DB; DB.pro = STORE.pro; DB.testMode = STORE.testMode;
+}
+function load(){
+  try{ const r = localStorage.getItem(KEY); if (r){ const o = JSON.parse(r);
+    if (o && o.v === 2 && o.pets) STORE = o;
+    else if (o && o.v === 1)           // 單隻貓時代的存檔 → 轉成多貓格式
+      STORE = { v:2, cur:"p1", pets:{ p1:o }, pro:!!o.pro, testMode:!!o.testMode }; } }catch(e){}
+  if (!STORE || !STORE.pets[STORE.cur]) STORE = freshStore();
+  bindCur();
+}
+function persist(){                    // 會丟例外，給需要知道存不存得下的地方用
+  STORE.pets[STORE.cur] = DB; STORE.pro = DB.pro; STORE.testMode = DB.testMode;
+  localStorage.setItem(KEY, JSON.stringify(STORE));
+}
+function save(){ try{ persist(); }catch(e){} }
+
+function switchPet(id){
+  save(); STORE.cur = id; bindCur();
+  VIEW = DB.obDone ? "today" : "ob"; PICK = 0; EDIT = -1; ANIMVIEW = -1; save(); render();
+}
+function addPet(){            // 新的一隻一樣走首次流程：只問名字、3 個聲音
+  save(); const id = "p" + Date.now();
+  STORE.pets[id] = FRESH(); STORE.cur = id; bindCur(); VIEW = "ob"; save(); render();
+}
+function petSheet(){
+  const sh = el("sheet");
+  if (!sh.hidden && sh.dataset.kind === "pets"){ sh.hidden = true; return; }
+  sh.hidden = false; sh.dataset.kind = "pets";
+  const ids = Object.keys(STORE.pets);
+  const canAdd = DB.pro || DB.testMode || ids.length < PET_FREE;
+  sh.innerHTML = `<span class="hd">我的毛孩　${ids.length} 隻${DB.pro ? "　PRO 無上限" : "　免費版 " + PET_FREE + " 隻"}</span>
+    ${ids.map(id => { const p = STORE.pets[id], nm = p.pet ? p.pet.name : "（還沒取名）";
+      return `<button type="button" data-pet="${id}"${id === STORE.cur ? ' class="on"' : ""}>${esc(nm)}${
+        id === STORE.cur ? "　·　目前" : ""}</button>`; }).join("")}
+    ${canAdd
+      ? `<button type="button" id="addpet">＋ 新增一隻</button>`
+      : `<button type="button" disabled>多貓是 Pro 功能 —— 免費版只能 1 隻</button>
+         <button type="button" id="pettrial">免費試用 14 天</button>`}
+    <button type="button" id="pcl">關閉</button>`;
+  sh.querySelectorAll("[data-pet]").forEach(b => b.onclick = () => { sh.hidden = true; switchPet(b.dataset.pet); });
+  const ap = el("addpet"); if (ap) ap.onclick = () => { sh.hidden = true; addPet(); };
+  const pt = el("pettrial"); if (pt) pt.onclick = () => { DB.pro = true; give(1); save(); sh.hidden = true; petSheet(); };
+  el("pcl").onclick = () => sh.hidden = true;
+}
 
 function writeLog(o){ DB.log.push(Object.assign({ ts:Date.now(), date:today() }, o)); save(); }
 const avoided = () => DB.log.filter(r => r.reaction === "fear").map(r => r.soundId);
@@ -622,12 +689,13 @@ function render(){
   stopAnim();
   const v = el("view"); v.className = "view";
   el("dt").textContent = md(today());
-  el("nav").hidden = !DB.obDone;
-  el("wm").textContent = DB.pet ? DB.pet.name : "小本本";
+  el("nav").hidden = !DB.obDone || VIEW === "doc";
+  el("wm").textContent = (DB.pet ? DB.pet.name : "小本本") + (DB.obDone || petCount() > 1 ? "　▾" : "");
 
   if (!DB.obDone) renderOb(v);
   else if (VIEW === "today") renderToday(v);
   else if (VIEW === "favs") renderFavs(v);
+  else if (VIEW === "doc") renderDoc(v);
   else if (VIEW === "timeline") renderTimeline(v);
   else renderPrefs(v);
 
@@ -1048,6 +1116,8 @@ function renderPrefs(v){
         : `<p class="tiny" style="text-align:left">品種、生日、體重、病史分次問，每一項都要說得出它會出現在哪裡。第一次開啟只問名字。</p>`}
     </div>
 
+    ${weightCard()}
+
     ${careCard()}
 
     <div class="card">
@@ -1083,11 +1153,14 @@ function renderPrefs(v){
         <div class="sumsec">疫苗 · 驅蟲</div>
         ${careSum(s.from)}
         <div class="sumsec">體重</div>
-        <div class="sumnote" style="opacity:.6">未記錄</div>
+        ${weightSum(s.from)}
         ${s.miss.length
           ? `<div class="summiss">期間內 ${s.miss.length} 天沒有記錄：${s.miss.slice(0,6).map(md).join("、")}${s.miss.length>6?" …":""}</div>` : ""}
         <div class="sumfoot">未記錄不等於正常。本摘要只整理實際記錄，不含推測，也不是診斷。</div>
       </div>
+
+      <button type="button" class="btn primary" id="docmode">拿給醫生看（免費）</button>
+      <p class="tiny">看診時直接把手機交給醫生，大字、只留醫生要看的</p>
 
       ${DB.pro
         ? `<button type="button" class="btn" id="exp">匯出 PDF 給獸醫</button>
@@ -1117,6 +1190,75 @@ function retestCard(){
       : `<div class="lockbox"><b>${pr.length} 個聲音可以對照</b>
            <span class="sub">同一個聲音隔一段時間再放，反應變了沒</span>
            <button type="button" class="btn primary" id="trial2">免費試用 14 天看對照</button></div>`}
+  </div>`;
+}
+
+/* ---- 體重：在家量，同一天只留最後一筆。只陳述數字，不判斷好壞 ---- */
+const byDate = a => a.slice().sort((x, y) => x.date < y.date ? -1 : x.date > y.date ? 1 : 0);
+function deltaTxt(f, l){
+  const d = l.kg - f.kg, p = d / f.kg * 100, sg = d >= 0 ? "+" : "−";
+  return sg + Math.abs(d).toFixed(2) + " kg（" + sg + Math.abs(p).toFixed(1) + "%）";
+}
+function sparkline(w){
+  const pts = w.slice(-12), W = 300, H = 74, P = 14, L = pts[pts.length - 1];
+  const t0 = daysUntil(pts[0].date), t1 = daysUntil(L.date);
+  const ks = pts.map(p => p.kg), lo = Math.min(...ks) - .05, hi = Math.max(...ks) + .05;
+  const X = d => P + (W - 2*P) * (t1 === t0 ? .5 : (daysUntil(d) - t0) / (t1 - t0));
+  const Y = k => P + (H - 2*P - 8) * (1 - (k - lo) / (hi - lo));
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="體重趨勢 ${md(pts[0].date)} 到 ${md(L.date)}">
+    <line x1="${P}" x2="${W-P}" y1="${H-P-6}" y2="${H-P-6}" style="stroke:var(--line)"/>
+    <polyline points="${pts.map(p => X(p.date).toFixed(1) + "," + Y(p.kg).toFixed(1)).join(" ")}"
+      style="fill:none;stroke:var(--indigo);stroke-width:2;stroke-linejoin:round"/>
+    ${pts.map(p => `<circle cx="${X(p.date).toFixed(1)}" cy="${Y(p.kg).toFixed(1)}" r="2.3" style="fill:var(--indigo)"/>`).join("")}
+    <circle cx="${X(L.date).toFixed(1)}" cy="${Y(L.kg).toFixed(1)}" r="4.2" style="fill:var(--apricot)"/>
+    <text x="${P}" y="${H-3}" style="fill:var(--muted);font-size:10px">${md(pts[0].date)}　${pts[0].kg.toFixed(2)}</text>
+    <text x="${W-P}" y="${H-3}" text-anchor="end" style="fill:var(--muted);font-size:10px">${md(L.date)}　${L.kg.toFixed(2)}</text>
+  </svg>`;
+}
+function weightCard(){
+  const w = byDate(DB.weights), last = w[w.length - 1];
+  return `<div class="card">
+    <span class="hd">體重</span>
+    ${w.length >= 2 ? sparkline(w) : ""}
+    ${last
+      ? `<div class="row"><b class="grow" style="font-size:1rem">${last.kg.toFixed(2)} kg</b>
+           <span class="sub">${md(last.date)}${w.length >= 2 ? "　·　比 " + md(w[0].date) + " " + deltaTxt(w[0], last) : ""}</span></div>`
+      : `<p class="tiny" style="text-align:left">還沒有紀錄。在家量就好：自己站上體重計，再抱著牠量一次，相減就是牠的體重。</p>`}
+    <div class="row"><input type="number" id="wkg" class="grow" step="0.05" min="0.3" max="15" inputmode="decimal" placeholder="例如 4.25">
+      <span class="sub">kg</span>
+      <button type="button" class="btn" style="width:auto" id="wadd">記一筆</button></div>
+    ${w.length ? `<div class="favlist">${w.slice(-4).reverse().map(x => `
+        <div class="favrow"><b class="grow">${x.kg.toFixed(2)} kg</b><span class="sub">${md(x.date)}</span>
+          <button type="button" class="heart" data-wdel="${x.ts}">×</button></div>`).join("")}</div>` : ""}
+  </div>`;
+}
+function weightSum(from){
+  const w = byDate(DB.weights.filter(x => x.date >= from));
+  if (!w.length) return `<div class="sumnote" style="opacity:.6">期間內未記錄</div>`;
+  if (w.length === 1) return `<div class="sumnote"><span>${md(w[0].date)}</span>${w[0].kg.toFixed(2)} kg（期間內只量一次）</div>`;
+  const f = w[0], l = w[w.length - 1];
+  return `<div class="sumnote"><span>${md(f.date)}</span>${f.kg.toFixed(2)} kg</div>
+          <div class="sumnote"><span>${md(l.date)}</span>${l.kg.toFixed(2)} kg　${deltaTxt(f, l)}　·　共量 ${w.length} 次</div>`;
+}
+
+/* ---- 拿給醫生看：看診時直接把手機交給獸醫。免費 —— 獸醫是通路 ----
+   順序照獸醫在意的程度排：體重 → 觀察 → 疫苗驅蟲 → 聲音反應性 → 缺漏 */
+function renderDoc(v){
+  const s = summary(SUMDAYS), p = DB.pet || {};
+  const snd = s.snd.filter(r => r.reaction !== "absent");
+  v.innerHTML = `<div class="docview">
+    <div class="dochd"><b>${esc(p.name || "牠")}</b>
+      <span>貓${p.age ? "　·　" + esc(p.age) : ""}${p.breed ? "　·　" + esc(p.breed) : ""}</span>
+      <span>${md(s.from)} – ${md(today())}　·　有記錄 ${s.covered} / ${s.days} 天</span></div>
+    <section><h3>體重</h3>${weightSum(s.from)}</section>
+    <section><h3>日常觀察　${s.notes.length} 筆</h3>${s.notes.length
+      ? s.notes.slice().reverse().map(n => `<div class="sumnote"><span>${md(n.date)}</span>${esc(n.note)}</div>`).join("")
+      : `<div class="sumnote" style="opacity:.6">期間內沒有文字觀察</div>`}</section>
+    <section><h3>疫苗 · 驅蟲</h3>${careSum(s.from)}</section>
+    <section><h3>聲音反應性</h3>${snd.length ? catBars(snd) : `<div class="sumnote" style="opacity:.6">期間內沒有</div>`}</section>
+    ${s.miss.length ? `<div class="summiss">期間內 ${s.miss.length} 天沒有記錄：${s.miss.map(md).join("、")}</div>` : ""}
+    <p class="docfoot">以上是飼主在家記錄的內容，未經醫療人員確認。未記錄不等於沒有發生。本頁不是診斷。</p>
+    <button type="button" class="btn" id="docclose">看完了，回到小本本</button>
   </div>`;
 }
 
@@ -1178,6 +1320,21 @@ function bind(){
   el("view").querySelectorAll("[data-del]").forEach(b =>
     b.addEventListener("click", () => { DB.log.splice(+b.dataset.del, 1);
       EDIT = -1; MSG = "刪掉了"; save(); render(); }));
+
+  // 體重
+  const wa = el("wadd"); if (wa) wa.addEventListener("click", () => {
+    const k = parseFloat(el("wkg").value);
+    if (!(k >= 0.3 && k <= 15)){ MSG = "請輸入 0.3 到 15 之間的公斤數"; render(); return; }
+    const t = today(); DB.weights = DB.weights.filter(x => x.date !== t);   // 同一天只留最後一筆
+    DB.weights.push({ ts: Date.now(), date: t, kg: Math.round(k * 100) / 100 });
+    MSG = "記下了：" + k.toFixed(2) + " kg"; save(); render(); });
+  el("view").querySelectorAll("[data-wdel]").forEach(b =>
+    b.addEventListener("click", () => { DB.weights = DB.weights.filter(x => String(x.ts) !== b.dataset.wdel);
+      save(); render(); }));
+
+  // 拿給醫生看
+  const dm = el("docmode"); if (dm) dm.addEventListener("click", () => { VIEW = "doc"; render(); });
+  const dc = el("docclose"); if (dc) dc.addEventListener("click", () => { VIEW = "prefs"; render(); });
 
   // 疫苗／驅蟲
   const ca = el("cadd"); if (ca) ca.addEventListener("click", () => {
@@ -1269,7 +1426,7 @@ function upload(file){
   fr.onload = () => {
     const c = { id:"custom_" + Date.now(), n:file.name.replace(/\.[^.]+$/,"").slice(0,20) || "自訂錄音", data:fr.result };
     DB.customs.push(c);
-    try { localStorage.setItem(KEY, JSON.stringify(DB)); }
+    try { persist(); }
     catch(e){ DB.customs.pop(); MSG = "本機空間不足，存不下。先刪掉一個再試"; render(); return; }
     MSG = "已加入：" + c.n; render();
   };
@@ -1339,7 +1496,9 @@ el("nav").addEventListener("click", e => { const b = e.target.closest("[data-v]"
   if (b){ VIEW = b.dataset.v; EDIT = -1; ANIMVIEW = -1; render(); } });
 
 /* ---- 審閱面板 ---- */
+el("wm").addEventListener("click", petSheet);
 el("cog").addEventListener("click", () => {
+  el("sheet").dataset.kind = "review";
   const sh = el("sheet");
   if (!sh.hidden){ sh.hidden = true; return; }
   sh.hidden = false;
@@ -1364,12 +1523,13 @@ el("cog").addEventListener("click", () => {
     const before = DB.log.length;
     DB.log = DB.log.filter(r => !r.demo);
     DB.care = DB.care.filter(c => !c.demo); DB.careHist = DB.careHist.filter(h => !h.demo);
+    DB.weights = DB.weights.filter(x => !x.demo);
     const live = new Set(DB.log.map(r => r.soundId));
     DB.favs = DB.favs.filter(id => live.has(id));      // 愛心是從示範紀錄來的就一起清掉
     save(); sh.hidden = true;
     MSG = "清掉 " + (before - DB.log.length) + " 筆示範資料，你自己記的都還在"; render(); };
   el("cl").onclick = () => sh.hidden = true;
-  el("rs2").onclick = () => { DB = FRESH(); VIEW = "ob"; save(); sh.hidden = true; render(); };
+  el("rs2").onclick = () => { STORE = freshStore(); bindCur(); VIEW = "ob"; save(); sh.hidden = true; render(); };
   el("jf").onclick = () => { seed("fear"); sh.hidden = true; render(); };
   el("jn").onclick = () => { seed("none"); sh.hidden = true; render(); };
 });
@@ -1407,6 +1567,9 @@ function seedDemo(){
   DB.care = [ { id:"c1", kind:"疫苗", name:"三合一", next:plus(2), lead:3, on:true, demo:true },
               { id:"c2", kind:"驅蟲", name:"體內外驅蟲", next:plus(-3), lead:1, on:true, demo:true } ];
   DB.careHist = [ { date:shiftDate(40), kind:"疫苗", name:"狂犬病", demo:true } ];
+  // 體重：兩週緩降 0.12 kg —— 這正是慢性病貓飼主最需要拿給醫生看的那種變化
+  DB.weights = [[14, 4.36], [10, 4.33], [7, 4.31], [3, 4.27], [1, 4.24]].map(([d, kg]) =>
+    ({ ts: Date.now() - d*864e5, date: shiftDate(d), kg, demo:true }));
   DB.favs = [...new Set(DB.log.filter(r => r.reaction === "interest").map(r => r.soundId))].slice(0, 6);
   DB.obDone = true; DB.day = { date: today(), played: 0, earned: 0 };
   give(3); save();
@@ -1435,7 +1598,8 @@ const NOTE = {
   today:"日常每天只推一個聲音，絕不連放。聲音是鉤子，「說一句」才是價值 —— 後者永不主動提醒。",
   favs:"跟「互動」是兩件事：互動＝發現新聲音（消耗制），專屬＝已知牠喜歡的（永久、可重播）。發現要計量，陪貓玩不該計量。",
   timeline:"互動與觀察寫在同一條時間軸。使用者以為在跟貓玩，App 在累積行為基線。愛心把聲音收進專屬區。",
-  prefs:"摘要在畫面上永遠免費 —— 獸醫是通路，收費等於堵住通路。付費買的是「帶走」：PDF、分享連結、列印。"
+  prefs:"摘要在畫面上永遠免費 —— 獸醫是通路，收費等於堵住通路。付費買的是「帶走」：PDF、分享連結、列印。",
+  doc:"看診時直接把手機交給醫生。大字、只留醫生要看的，照醫生在意的程度排：體重 → 觀察 → 疫苗驅蟲 → 反應性 → 缺漏。免費。"
 };
 const RULES = {
   NAMING:[["名字必填 1–10 字，為空時「開始」維持 disabled"],["不要求登入、不要求 email"],
@@ -1479,7 +1643,13 @@ const RULES = {
   timeline:[["聲音紀錄與自由觀察同一條軸，可篩選「聲音／觀察」"],["愛心把聲音收進專屬區"],
     ["★ 每筆都能修改與刪除 —— 首次流程沒有返回鍵，點錯就在這裡改", 1],
     ["反應改成「被嚇到」會自動從專屬區拿掉"],["看診摘要由此期間計算"]],
-  prefs:[["基本資料分次拿：Day 7 問年齡、Day 14 問品種，每次都要給理由"],
+  doc:[["★ 免費 —— 這就是「摘要看免費、帶走才收費」裡的「看」", 1],
+    ["不顯示任何 App 介面元素（底部導覽收起），只有醫生要看的"],
+    ["頁尾聲明：飼主在家記錄、未經醫療人員確認、不是診斷", 1],
+    ["期間跟著摘要的 7／14／30 天切換"]],
+  prefs:[["多貓：點左上名字切換或新增。免費 1 隻，Pro 無上限 —— 收費設計裡 Pro 的第一項"],
+    ["體重：同一天只留最後一筆；趨勢圖與摘要只陳述數字與變化量，不判斷好壞", 1],
+    ["基本資料分次拿：Day 7 問年齡、Day 14 問品種，每次都要給理由"],
     ["★ 疫苗驅蟲日期由飼主照獸醫安排填，App 不推算週期；「已施作」不自動續排", 1],
     ["提前 0／1／3／7 天提醒；保留施作歷史；原型不發手機通知"],
     ["重測對照是 Pro —— 全站唯一競品沒有的東西。反應變了不等於有問題，措辭不診斷"],
