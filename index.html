@@ -1,0 +1,1525 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>毛孩小本本試用原型</title>
+
+<!-- 不要被搜尋引擎收錄：這是未上市產品的試用原型 -->
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+
+<!-- 加到主畫面時以全螢幕開啟，看起來就是一個 App -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="小本本">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#293B70">
+
+<style>
+:root{color-scheme:light;box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;
+  background:#fff;color:#000;height:100%}
+img{max-width:100%}
+[hidden]:not([hidden=until-found i]){display:none!important}
+</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+
+<style>
+/* 手機＝全螢幕 App，桌機＝手機框＋右側規格面板。
+   品牌色：靛藍 #293B70、杏橘 #F4975A（XiaoBenBen-Logo-B-v1 定案）。 */
+:root{
+  --paper:#EFEFEC; --surface:#FFFFFF; --surface-2:#F5F5F1; --line:#DCDCD4;
+  --ink:#1A1C22; --muted:#6C7080;
+  --indigo:#293B70; --indigo-soft:#DDE2F0;
+  --apricot:#F4975A; --apricot-soft:#FDEADB; --on-apricot:#2A1403;
+  --calm:#51708E; --calm-soft:#DFE8F0;
+  --font-zh:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#101218; --surface:#191C25; --surface-2:#222633; --line:#2E3342;
+    --ink:#E8EAF0; --muted:#949AAD;
+    --indigo:#93A6E0; --indigo-soft:#1C2340;
+    --apricot:#F4975A; --apricot-soft:#3A2817; --on-apricot:#2A1403;
+    --calm:#86A6C4; --calm-soft:#1D2A36;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101218; --surface:#191C25; --surface-2:#222633; --line:#2E3342;
+  --ink:#E8EAF0; --muted:#949AAD;
+  --indigo:#93A6E0; --indigo-soft:#1C2340;
+  --apricot:#F4975A; --apricot-soft:#3A2817; --on-apricot:#2A1403;
+  --calm:#86A6C4; --calm-soft:#1D2A36;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-zh); line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 32px;
+}
+h1,h2{margin:0; font-weight:700; text-wrap:balance}
+p{margin:0}
+button{font:inherit; cursor:pointer; border:1px solid transparent; border-radius:10px}
+button:focus-visible{outline:2px solid var(--indigo); outline-offset:2px}
+button[disabled]{opacity:.42; cursor:not-allowed}
+
+/* ---------- 桌機外框 ---------- */
+.masthead{
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 16px;
+  padding-block:20px 14px; border-bottom:1px solid var(--line);
+  max-width:1160px; margin-inline:auto;
+}
+.masthead h1{font-size:1.1rem}
+.masthead .en{font-family:var(--font-mono); font-size:.7rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--indigo)}
+.masthead .meta{margin-left:auto; font-family:var(--font-mono); font-size:.7rem; color:var(--muted)}
+.lede{max-width:1160px; margin:14px auto 0; font-size:.88rem; color:var(--muted); max-inline-size:72ch}
+.wrap{max-width:1160px; margin:24px auto 0; display:grid;
+  grid-template-columns:minmax(0,330px) minmax(0,1fr); gap:28px; align-items:start}
+.stage{display:flex; flex-direction:column; gap:14px; align-items:center}
+
+.device{
+  width:min(312px,100%); height:640px; background:var(--surface);
+  border:1px solid var(--line); border-radius:30px; padding:11px 10px;
+  box-shadow:0 14px 34px -18px rgba(16,18,24,.5); display:flex; flex-direction:column;
+}
+.notch{width:70px; height:5px; border-radius:3px; background:var(--line); margin:1px auto 9px; flex:none}
+
+/* ---------- App 本體 ---------- */
+.app{
+  flex:1; min-height:0; background:var(--surface-2);
+  border:1px solid var(--line); border-radius:19px;
+  display:flex; flex-direction:column; overflow:hidden; position:relative;
+}
+.appbar{
+  flex:none; display:flex; align-items:center; gap:8px;
+  padding:10px 14px; border-bottom:1px solid var(--line); background:var(--surface);
+}
+.appbar .wordmark{font-size:.84rem; font-weight:700; letter-spacing:.04em; color:var(--indigo)}
+.appbar .date{margin-left:auto; font-family:var(--font-mono); font-size:.68rem; color:var(--muted)}
+.appbar .cog{
+  background:none; border:none; padding:2px 4px; font-size:.68rem;
+  color:var(--muted); text-decoration:underline; text-underline-offset:3px;
+}
+.view{flex:1; min-height:0; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px}
+.view.center{justify-content:center}
+.navbar{
+  flex:none; display:grid; grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--line); background:var(--surface);
+}
+.navbar button{
+  background:none; border:none; border-radius:0; padding:9px 4px;
+  font-size:.72rem; color:var(--muted); display:flex; flex-direction:column; gap:1px; align-items:center;
+}
+.navbar button.on{color:var(--indigo); font-weight:700; box-shadow:inset 0 2px 0 var(--indigo)}
+
+/* ---------- 元件 ---------- */
+.brand{text-align:center; display:flex; flex-direction:column; gap:2px; margin-bottom:6px}
+.brand b{font-size:1.5rem; letter-spacing:.06em; color:var(--indigo)}
+.brand span{font-size:.72rem; color:var(--muted)}
+.ask{font-size:1.06rem; font-weight:700; text-align:center; line-height:1.5}
+.say{font-size:.92rem; text-align:center; line-height:1.65}
+.say em{font-style:normal; font-weight:700; color:var(--indigo)}
+.tiny{font-size:.7rem; color:var(--muted); text-align:center; line-height:1.55}
+.step{font-family:var(--font-mono); font-size:.68rem; letter-spacing:.1em; color:var(--muted); text-align:center}
+
+input[type=text],textarea{
+  width:100%; font:inherit; font-size:.9rem; padding:10px 12px; border-radius:10px;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink); resize:none;
+}
+input[type=text]{text-align:center}
+input:focus-visible,textarea:focus-visible{outline:2px solid var(--indigo); outline-offset:1px}
+
+.btn{width:100%; padding:11px 12px; font-size:.86rem; font-weight:500;
+  background:var(--surface); color:var(--ink); border-color:var(--line); transition:transform .1s ease}
+.btn:not([disabled]):active{transform:translateY(1px)}
+.btn.primary{background:var(--indigo); color:#FFF; border-color:var(--indigo);
+  font-size:.95rem; font-weight:700; padding:13px 12px}
+:root[data-theme="dark"] .btn.primary{color:#101218}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .btn.primary{color:#101218} }
+.btn.interest{background:var(--indigo-soft); border-color:var(--indigo)}
+.btn.fear{background:var(--calm-soft); border-color:var(--calm)}
+.btn.play{background:var(--apricot); color:var(--on-apricot); border-color:var(--apricot);
+  font-size:1rem; font-weight:700; padding:15px 12px; letter-spacing:.08em}
+.btn.play.on{animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{filter:brightness(1.12)}}
+.linkbtn{align-self:center; background:none; border:none; padding:4px 2px;
+  font-size:.72rem; color:var(--muted); text-decoration:underline; text-underline-offset:3px}
+.linkbtn:hover{color:var(--indigo)}
+
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px;
+  padding:13px 14px; display:flex; flex-direction:column; gap:7px}
+.card.rec{border-color:var(--indigo); animation:rise .4s cubic-bezier(.2,.8,.3,1) both}
+.card.rec.avoid{border-color:var(--calm)}
+.card b{font-size:.88rem}
+.card .sub{font-family:var(--font-mono); font-size:.68rem; color:var(--muted)}
+.card .hd{font-size:.7rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--indigo)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)}}
+@media (prefers-reduced-motion:reduce){ .card.rec{animation:none} .btn.play.on{animation:none} .btn:active{transform:none} }
+
+.row{display:flex; gap:9px; align-items:center}
+.row .grow{flex:1; min-width:0}
+.pill{font-family:var(--font-mono); font-size:.66rem; padding:2px 7px; border-radius:5px; border:1px solid; white-space:nowrap}
+.pill.interest{background:var(--indigo-soft); border-color:var(--indigo)}
+.pill.fear{background:var(--calm-soft); border-color:var(--calm)}
+.pill.none{background:var(--surface-2); border-color:var(--line); color:var(--muted)}
+.pill.absent{background:var(--apricot-soft); border-color:var(--apricot)}
+.pill.note{background:var(--surface-2); border-color:var(--line); color:var(--muted)}
+
+.banner{display:flex; flex-direction:column; gap:3px; padding:9px 12px; flex:none;
+  background:var(--apricot-soft); border:1px solid var(--apricot); border-radius:9px}
+.banner b{font-size:.8rem}
+.banner span{font-size:.72rem; color:var(--muted); line-height:1.45}
+
+.badge{margin-left:5px; font-size:.6rem; padding:0 5px; border-radius:4px; vertical-align:1px;
+  background:var(--apricot-soft); border:1px solid var(--apricot); color:var(--ink); font-weight:500}
+.carerow{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:9px;
+  background:var(--surface-2); border:1px solid var(--line)}
+.carerow .grow{display:flex; flex-direction:column; min-width:0}
+.carerow b{font-size:.86rem}
+.carest{font-family:var(--font-mono); font-size:.68rem; white-space:nowrap; color:var(--muted)}
+.carerow.over{border-color:var(--apricot)}
+.carerow.over .carest{color:var(--apricot); font-weight:500}
+.carerow.due,.carerow.soon{border-color:var(--indigo)}
+.carerow.due .carest,.carerow.soon .carest{color:var(--indigo); font-weight:500}
+.careform{display:grid; grid-template-columns:1fr 1fr; gap:6px}
+.careform input,.careform select,input.mini{width:100%; font:inherit; font-size:.82rem; padding:8px 9px;
+  border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--ink); min-width:0; text-align:left}
+.careform .btn{grid-column:1 / -1}
+input.mini{width:auto; max-width:9.5rem; padding:5px 7px; font-size:.74rem}
+
+.askbox{display:flex; flex-direction:column; gap:6px; padding:11px;
+  background:var(--surface-2); border:1px solid var(--line); border-radius:9px}
+.askbox b{font-size:.88rem}
+
+.sumdoc{background:var(--surface-2); border:1px solid var(--line);
+  border-radius:9px; padding:13px; display:flex; flex-direction:column; gap:6px}
+.sumhd{font-size:.86rem; font-weight:700; padding-bottom:7px; border-bottom:1px solid var(--line)}
+.sumrow{display:flex; justify-content:space-between; font-size:.82rem}
+.sumrow span{color:var(--muted)}
+.sumsec{font-family:var(--font-mono); font-size:.64rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); margin-top:7px}
+.sumnote{font-size:.8rem; line-height:1.55; display:flex; gap:8px}
+.sumnote span{font-family:var(--font-mono); font-size:.7rem; color:var(--muted); flex:none}
+.summiss{font-size:.76rem; color:var(--apricot); line-height:1.5; margin-top:5px}
+.sumfoot{font-size:.72rem; color:var(--muted); line-height:1.5;
+  border-top:1px solid var(--line); padding-top:7px; margin-top:4px}
+
+.paywall{display:flex; flex-direction:column; gap:8px; padding:14px;
+  border:1px solid var(--indigo); border-radius:10px; background:var(--indigo-soft)}
+.paywall b{font-size:.92rem}
+
+.animcv{width:100%; border-radius:10px; display:block; background:#0D1840}
+.lockbox{display:flex; flex-direction:column; gap:6px; padding:14px;
+  border:1px dashed var(--line); border-radius:10px; background:var(--surface-2); text-align:center}
+.lockbox b{font-size:.9rem}
+
+.favlist{display:flex; flex-direction:column; gap:7px}
+.favrow{display:flex; align-items:center; gap:8px; padding:7px 10px;
+  background:var(--surface-2); border:1px solid var(--line); border-radius:9px}
+.favrow b{font-size:.86rem; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.miniplay{flex:none; width:30px; height:30px; border-radius:50%; font-size:.72rem;
+  background:var(--apricot); color:var(--on-apricot); border-color:var(--apricot)}
+.heart{flex:none; background:none; border:none; padding:2px 5px; font-size:1rem;
+  color:var(--line); line-height:1}
+.heart.on{color:var(--indigo)}
+.heart:hover{color:var(--indigo)}
+
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chipbtn{padding:6px 11px; font-size:.78rem; border-radius:999px;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--ink)}
+.chipbtn.on{background:var(--indigo-soft); border-color:var(--indigo); font-weight:700}
+.chipbtn[disabled]{opacity:1}
+.chipbtn[disabled]:not(.on){opacity:.5}
+
+.bar{height:7px; border-radius:4px; background:var(--surface-2); overflow:hidden; border:1px solid var(--line)}
+.bar i{display:block; height:100%; background:var(--indigo)}
+.empty{font-size:.84rem; color:var(--muted); line-height:1.7; text-align:center}
+
+/* 審閱面板 */
+.sheet{
+  position:absolute; inset:auto 0 0 0; background:var(--surface);
+  border-top:1px solid var(--line); padding:14px; display:flex; flex-direction:column; gap:8px;
+  box-shadow:0 -10px 24px -16px rgba(16,18,24,.6); z-index:5;
+}
+.sheet .hd{font-family:var(--font-mono); font-size:.64rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted)}
+.sheet button{padding:8px 10px; font-size:.78rem; background:var(--surface-2);
+  border-color:var(--line); color:var(--ink)}
+
+/* ---------- 右欄（桌機才有） ---------- */
+.panel{display:flex; flex-direction:column; gap:14px; min-width:0}
+.pcard{background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:16px 17px; min-width:0}
+.pcard>h2{font-family:var(--font-mono); font-size:.68rem; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--indigo); margin-bottom:11px}
+.statebar{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.chip{font-family:var(--font-mono); font-size:.75rem; font-weight:500; padding:3px 9px;
+  border-radius:6px; background:var(--indigo-soft); color:var(--ink); border:1px solid var(--indigo)}
+.kv{font-family:var(--font-mono); font-size:.72rem; color:var(--muted)}
+.tablewrap{overflow-x:auto; margin-inline:-17px; padding-inline:17px}
+table{border-collapse:collapse; width:100%; min-width:420px; font-family:var(--font-mono); font-size:.72rem}
+th,td{text-align:left; padding:5px 9px 5px 0; border-bottom:1px solid var(--line); white-space:nowrap}
+th{font-weight:500; color:var(--muted); font-size:.64rem; letter-spacing:.08em; text-transform:uppercase}
+td.n{font-variant-numeric:tabular-nums; color:var(--muted)}
+.rules{display:flex; flex-direction:column; gap:8px; margin:0; padding:0; list-style:none}
+.rules li{font-size:.85rem; line-height:1.6; padding-left:14px; position:relative; max-inline-size:68ch}
+.rules li::before{content:""; position:absolute; left:0; top:.62em; width:5px; height:5px;
+  border-radius:1px; background:var(--indigo)}
+.rules li.no::before{background:var(--calm)}
+.note{font-size:.79rem; color:var(--muted); line-height:1.65; border-left:2px solid var(--line);
+  padding-left:11px; margin-top:11px; max-inline-size:66ch}
+code{font-family:var(--font-mono); font-size:.88em; background:var(--surface-2); padding:1px 5px; border-radius:4px}
+footer{max-width:1160px; margin:30px auto 0; padding-top:16px; border-top:1px solid var(--line);
+  font-size:.77rem; color:var(--muted); line-height:1.7; max-inline-size:76ch}
+
+/* ---------- 手機：全螢幕 App ---------- */
+@media (max-width:880px){
+  body{padding:0}
+  .masthead,.lede,.panel,footer{display:none}
+  .wrap{display:block; margin:0; height:100%; max-width:none}
+  .stage{height:100%; gap:0}
+  .device{width:100%; height:100%; border:none; border-radius:0; padding:0; box-shadow:none}
+  .notch{display:none}
+  .app{border:none; border-radius:0}
+  .appbar{padding-left:max(14px,env(safe-area-inset-left,0px));
+          padding-right:max(14px,env(safe-area-inset-right,0px))}
+  .view{padding-left:max(18px,env(safe-area-inset-left,0px));
+        padding-right:max(18px,env(safe-area-inset-right,0px)); padding-top:20px; padding-bottom:20px}
+  .sheet{padding-left:max(16px,env(safe-area-inset-left,0px));
+         padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .ask{font-size:1.2rem}
+  .say{font-size:1rem}
+  .btn{padding:14px 12px; font-size:.95rem}
+  .btn.primary{padding:16px 12px; font-size:1.02rem}
+  .btn.play{padding:19px 12px; font-size:1.1rem}
+}
+</style>
+
+<header class="masthead">
+  <h1>毛孩小本本 In Paw AI</h1>
+  <span class="en">Trial Prototype</span>
+  <span class="meta">2026-11-04</span>
+</header>
+
+<p class="lede">可試用的網頁原型。手機開啟是全螢幕 App，走完首次啟動後接到今日卡，每天一個新聲音，紀錄會累積。資料存在你自己的手機本機，關掉再開還在，別人看不到。右欄的規格面板只在桌機顯示。</p>
+
+<main class="wrap">
+  <section class="stage">
+    <div class="device">
+      <div class="notch"></div>
+      <div class="app">
+        <div class="appbar">
+          <span class="wordmark" id="wm">小本本</span>
+          <span class="date" id="dt"></span>
+          <button type="button" class="cog" id="cog">審閱</button>
+        </div>
+        <div class="view" id="view"></div>
+        <div class="navbar" id="nav" hidden>
+          <button type="button" data-v="today">互動</button>
+          <button type="button" data-v="favs">專屬</button>
+          <button type="button" data-v="timeline">時間軸</button>
+          <button type="button" data-v="prefs">毛孩</button>
+        </div>
+        <div class="sheet" id="sheet" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div class="pcard"><h2>目前狀態</h2>
+      <div class="statebar" id="statebar"></div>
+      <p class="note" id="statenote"></p></div>
+    <div class="pcard"><h2>reaction_log　本機資料表</h2><div id="logbox"></div></div>
+    <div class="pcard"><h2>本畫面規格</h2><ul class="rules" id="rules"></ul></div>
+  </aside>
+</main>
+
+<footer>
+  聲音是 Web Audio 合成的示意音，已套上與規格相同的音量上限（正式版為 3–5 秒實錄，授權來源未定，見待確認清單 E2）。原型不支援錄音，「說一句」只做打字；正式版是語音優先。資料只存在本機瀏覽器，沒有任何東西上傳。
+</footer>
+
+<script>
+/* ===================== 聲音：參數化合成 ===================== */
+const CAP = 0.17;
+let ac = null;
+const actx = () => (ac = ac || new (window.AudioContext || window.webkitAudioContext)());
+function noiseBuf(t, c){ const n = Math.floor(c.sampleRate*t), b = c.createBuffer(1,n,c.sampleRate), d = b.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=Math.random()*2-1; return b; }
+function env(g,peak,t0,a,d){ g.gain.setValueAtTime(0,t0);
+  g.gain.linearRampToValueAtTime(Math.min(peak,CAP),t0+a); g.gain.exponentialRampToValueAtTime(.0008,t0+a+d); }
+
+const ARCH = {
+  scrape(c,t0,p,dst){
+    const s=c.createBufferSource(); s.buffer=noiseBuf(p.len,c);
+    const bp=c.createBiquadFilter(); bp.type="bandpass"; bp.Q.value=p.q||7;
+    bp.frequency.setValueAtTime(p.f0,t0);
+    bp.frequency.exponentialRampToValueAtTime(p.f1,t0+p.len*.5);
+    bp.frequency.exponentialRampToValueAtTime(p.f0*1.5,t0+p.len);
+    const g=c.createGain(); env(g,.16,t0,.04,p.len*.9);
+    s.connect(bp).connect(g).connect(dst); s.start(t0); s.stop(t0+p.len+.1);
+    (p.ring||[]).forEach((f,i)=>{ const o=c.createOscillator(),og=c.createGain();
+      o.type="triangle"; o.frequency.value=f; env(og,.05-i*.018,t0+p.len*.45,.01,.5);
+      o.connect(og).connect(dst); o.start(t0+p.len*.45); o.stop(t0+p.len+.1); });
+  },
+  bursts(c,t0,p,dst){
+    for(let k=0;k<p.n;k++){ const s=c.createBufferSource(); s.buffer=noiseBuf(.2,c);
+      const f=c.createBiquadFilter(); f.type=p.lp?"lowpass":"highpass"; f.frequency.value=p.f+k*(p.step||0);
+      const g=c.createGain(), st=t0+k*p.gap; env(g,p.amp||.11,st,.012,p.dec||.13);
+      s.connect(f).connect(g).connect(dst); s.start(st); s.stop(st+.22); }
+  },
+  ping(c,t0,p,dst){
+    for(let r=0;r<p.n;r++) p.parts.forEach((f,i)=>{ const o=c.createOscillator(),g=c.createGain();
+      o.type=i?"sine":"triangle"; o.frequency.value=f;
+      env(g,(p.amp||.14)/(i+1.4),t0+r*p.gap,.004,p.dec||.42);
+      o.connect(g).connect(dst); o.start(t0+r*p.gap); o.stop(t0+r*p.gap+(p.dec||.42)+.1); });
+  },
+  mew(c,t0,p,dst){
+    const o=c.createOscillator(),g=c.createGain(),lp=c.createBiquadFilter();
+    o.type="sawtooth"; lp.type="lowpass"; lp.frequency.value=p.lp||2400; lp.Q.value=3;
+    o.frequency.setValueAtTime(p.a,t0);
+    o.frequency.linearRampToValueAtTime(p.b,t0+p.len*.25);
+    o.frequency.linearRampToValueAtTime(p.c0,t0+p.len*.85);
+    const v=c.createOscillator(),vg=c.createGain(); v.frequency.value=p.vib||17; vg.gain.value=p.vibd||26;
+    v.connect(vg).connect(o.frequency);
+    env(g,.13,t0,.07,p.len*.85);
+    o.connect(lp).connect(g).connect(dst);
+    o.start(t0); v.start(t0); o.stop(t0+p.len); v.stop(t0+p.len);
+  },
+  chirp(c,t0,p,dst){
+    for(let k=0;k<p.n;k++){ const st=t0+k*p.gap,o=c.createOscillator(),g=c.createGain();
+      o.type="sine"; o.frequency.setValueAtTime(p.a,st);
+      o.frequency.exponentialRampToValueAtTime(p.b,st+p.up);
+      o.frequency.exponentialRampToValueAtTime(p.c0,st+p.up*2.6);
+      env(g,p.amp||.1,st,.01,p.dec||.14);
+      o.connect(g).connect(dst); o.start(st); o.stop(st+p.gap); }
+  },
+  rumble(c,t0,p,dst){
+    const o=c.createOscillator(),g=c.createGain(),am=c.createOscillator(),ag=c.createGain();
+    o.type="sine"; o.frequency.value=p.f; am.frequency.value=p.rate; ag.gain.value=.5;
+    am.connect(ag).connect(g.gain);
+    env(g,.14,t0,.12,p.len);
+    o.connect(g).connect(dst); o.start(t0); am.start(t0); o.stop(t0+p.len+.2); am.stop(t0+p.len+.2);
+  },
+  thunk(c,t0,p,dst){
+    const s=c.createBufferSource(); s.buffer=noiseBuf(.3,c);
+    const lp=c.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=p.f; lp.Q.value=6;
+    const g=c.createGain(); env(g,.15,t0,.008,.3);
+    s.connect(lp).connect(g).connect(dst); s.start(t0); s.stop(t0+.35);
+    const o=c.createOscillator(),og=c.createGain(); o.type="sine"; o.frequency.value=p.hum||110;
+    env(og,.05,t0+.1,.05,p.len||.8); o.connect(og).connect(dst); o.start(t0+.1); o.stop(t0+1.1);
+  }
+};
+
+/* ===================== 聲音池 =====================
+   tr = 單音增益修正。離線算圖量過每個音的 peak 與 RMS，
+   讓輸出峰值對齊 TARGET_PEAK，持續音另受 RMS 上限約束。
+   CAP 只夾單一聲部，疊加後的總和要靠這裡與 master 限幅器。 */
+const SOUNDS = [
+  {id:"snd_can_open",   n:"開罐頭聲",   cat:"food",   ob:1, tr:1.98, a:"scrape", p:{len:1.1,f0:900,f1:2600,ring:[1840,2630]}},
+  {id:"snd_bag_tear",   n:"撕飼料袋",   cat:"food",   ob:1, tr:0.18, a:"bursts", p:{n:7,gap:.14,f:1500,step:180}},
+  {id:"snd_kitten_mew", n:"幼貓叫",     cat:"social", ob:1, tr:0.99, a:"mew",    p:{len:.9,a:520,b:880,c0:640}},
+  {id:"snd_bowl_tap",   n:"湯匙敲碗",   cat:"food",   ob:0, tr:0.96, a:"ping",   p:{n:2,gap:.3,parts:[1320,2180,3100]}},
+  {id:"snd_bird_chirp", n:"鳥叫",       cat:"hunt",   ob:0, tr:1.50, a:"chirp",  p:{n:4,gap:.25,a:2500,b:4100,c0:2700,up:.05}},
+  {id:"snd_plastic",    n:"塑膠袋窸窣", cat:"env",    ob:0, tr:0.34, a:"bursts", p:{n:11,gap:.1,f:2200,step:60,amp:.08,dec:.09}},
+  {id:"snd_bell",       n:"逗貓棒鈴鐺", cat:"play",   ob:0, tr:1.16, a:"ping",   p:{n:5,gap:.14,parts:[3200,4700,6100],amp:.1,dec:.2}},
+  {id:"snd_purr",       n:"成貓呼嚕",   cat:"social", ob:0, tr:0.10, a:"rumble", p:{f:52,rate:26,len:1.6}},
+  {id:"snd_mouse",      n:"老鼠吱吱",   cat:"hunt",   ob:0, tr:1.51, a:"chirp",  p:{n:6,gap:.17,a:3400,b:5200,c0:3600,up:.03,dec:.09}},
+  {id:"snd_insect",     n:"蟲振翅",     cat:"hunt",   ob:0, tr:5.45, a:"bursts", p:{n:14,gap:.07,f:900,step:0,amp:.07,dec:.05,lp:1}},
+  {id:"snd_fridge",     n:"冰箱門開啟", cat:"food",   ob:0, tr:2.52, a:"thunk",  p:{f:420,hum:98,len:1.0}},
+  {id:"snd_crinkle",    n:"零食袋捏響", cat:"food",   ob:0, tr:0.36, a:"bursts", p:{n:9,gap:.11,f:2800,step:-90,amp:.1,dec:.08}},
+  {id:"snd_sparrow",    n:"窗外麻雀群", cat:"hunt",   ob:0, tr:1.48, a:"chirp",  p:{n:8,gap:.16,a:2900,b:4400,c0:3000,up:.04,dec:.1}}
+];
+const byId = id => SOUNDS.find(s => s.id === id);
+const OB_POOL = SOUNDS.filter(s => s.ob);          // 只有 ob=1 能進首次流程，目前 3 個
+const CATNAME = {food:"食物類", social:"社交類", hunt:"狩獵類", play:"玩具類", env:"環境類"};
+
+/* master：單音修正 → 限幅器 → 輸出。這才是真正的硬上限。 */
+function bus(c){
+  const trim = c.createGain();
+  const lim = c.createDynamicsCompressor();
+  lim.threshold.value = -20; lim.knee.value = 0; lim.ratio.value = 20;
+  lim.attack.value = 0.002; lim.release.value = 0.08;
+  // 限幅器把各音峰值拉齊到 ~0.49，這道衰減把它壓回 CAP 以下（實測 max 0.163）
+  const out = c.createGain(); out.gain.value = 0.33;
+  trim.connect(lim).connect(out).connect(c.destination);
+  return trim;
+}
+function playSound(id){
+  const c = actx(); if (c.state === "suspended") c.resume();
+  const s = byId(id), b = bus(c);
+  b.gain.value = s.tr;
+  ARCH[s.a](c, c.currentTime + .04, s.p, b);
+}
+
+/* ===================== 儲存 ===================== */
+const KEY = "inpaw.trial.v1";
+const today = () => { const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); };
+const md = s => s ? (+s.slice(5,7)) + "/" + (+s.slice(8,10)) : "";
+
+const FRESH = () => ({ v:1, pet:null, obDone:false,
+  ob:{ state:"NAMING", attempt:1, replays:0, retryRound:1, played:[] },
+  log:[], stash:[], favs:[], customs:[], anims:[], care:[], careHist:[], day:{ date:null, played:0, earned:0 },
+  dailyIdx:0, pro:false, testMode:false });
+const CUSTOM_FREE = 1;                 // 免費版自訂錄音 1 個，Pro 無限
+const COLLECT_UNLOCK = 6;              // 專屬聲音滿 6 個解鎖動畫
+const ANIM_FREE = 2;                   // 免費版可保存 2 個動畫，Pro 無限
+const MAX_UPLOAD = 300 * 1024;         // 本機儲存有限，原型先擋在 300KB
+const bufCache = new Map();            // 解碼後的 AudioBuffer，不進 localStorage
+let MSG = "";
+let UNDO = null;
+const QUICK = ["吃光光", "沒吃完", "吐了", "軟便", "尿團變小", "很有精神"];
+const RETEST_DAYS = 7;     // 正式版 30 天；DEMO 用 7 天，示範資料才看得到
+const LEAD = [0, 1, 3, 7];
+const RLG = { interest:"有反應", fear:"被嚇到", none:"沒反應", absent:"不在" };
+let EDIT = -1, TLF = "all", ANIMVIEW = -1;
+
+function daysUntil(d){ return Math.round((new Date(d + "T00:00:00") - new Date(today() + "T00:00:00")) / 864e5); }
+const plus = k => shiftDate(1 - k);
+const dstr = ts => { const d = new Date(ts); return (d.getMonth() + 1) + "/" + d.getDate(); };
+
+/* ---- 重測：同一個聲音隔一段時間再放，反應變了沒 ---- */
+function lastRecord(id){ for (let i = DB.log.length - 1; i >= 0; i--){ const r = DB.log[i];
+  if (r.soundId === id && r.type !== "note" && r.reaction !== "absent") return r; } return null; }
+function isRetest(id){ const r = lastRecord(id); return !!r && daysUntil(r.date) <= -RETEST_DAYS; }
+function retestPairs(){
+  const by = {};
+  DB.log.forEach(r => { if (r.type === "note" || r.reaction === "absent") return;
+    (by[r.soundId] = by[r.soundId] || []).push(r); });
+  return Object.keys(by).map(id => { const a = by[id], f = a[0], l = a[a.length - 1];
+    return a.length >= 2 && daysUntil(l.date) - daysUntil(f.date) >= RETEST_DAYS ? { id, name:f.name, f, l } : null; })
+    .filter(Boolean);
+}
+
+/* ---- 疫苗／驅蟲（v8 p31）：日期由飼主照獸醫安排填，App 不推算週期、不自動續排 ---- */
+function careStatus(it){
+  if (!it.next) return { cls:"none", txt:"下次日期待確認" };
+  const n = daysUntil(it.next);
+  if (n < 0)        return { cls:"over", txt:"逾期 " + (-n) + " 天" };
+  if (n === 0)      return { cls:"due",  txt:"今天到期" };
+  if (n <= it.lead) return { cls:"soon", txt:n + " 天後" };
+  return { cls:"ok", txt:md(it.next) + "（" + n + " 天後）" };
+}
+function careBanner(){
+  const due = DB.care.filter(c => c.on !== false && c.next).map(c => [c, careStatus(c)])
+    .filter(([, st]) => st.cls === "over" || st.cls === "due" || st.cls === "soon");
+  if (!due.length) return "";
+  return `<div class="card"><span class="hd">今日提醒　${due.length} 件</span>
+    ${due.map(([c, st]) => `<div class="carerow ${st.cls}"><div class="grow"><b>${esc(c.name)}</b>
+      <span class="sub">${c.kind}</span></div><span class="carest">${st.txt}</span></div>`).join("")}
+    <p class="tiny" style="text-align:left">到「毛孩」頁標記已施作。原型不發手機通知</p></div>`;
+}
+function careCard(){
+  const items = DB.care.filter(c => c.on !== false);
+  return `<div class="card">
+    <span class="hd">疫苗 · 驅蟲提醒</span>
+    ${items.length ? items.map(it => { const st = careStatus(it);
+      return `<div class="carerow ${st.cls}">
+        <div class="grow"><b>${esc(it.name)}</b><span class="sub">${it.kind}　·　提前 ${it.lead} 天提醒</span></div>
+        ${it.next
+          ? `<span class="carest">${st.txt}</span>
+             <button type="button" class="linkbtn" data-done="${it.id}">已施作</button>`
+          : `<input type="date" class="mini" id="nx_${it.id}">
+             <button type="button" class="linkbtn" data-setnext="${it.id}">存</button>`}
+        <button type="button" class="heart" data-cdel="${it.id}">×</button></div>`; }).join("")
+      : `<p class="tiny" style="text-align:left">還沒有項目。日期請照獸醫的安排填 —— App 不推算施作週期。</p>`}
+    <div class="careform">
+      <select id="ck"><option>疫苗</option><option>驅蟲</option></select>
+      <select id="cl2">${LEAD.map(l => `<option value="${l}"${l === 3 ? " selected" : ""}>提前 ${l} 天</option>`).join("")}</select>
+      <input type="text" id="cn" placeholder="名稱，例如：三合一" maxlength="16">
+      <input type="date" id="cd">
+      <button type="button" class="btn" id="cadd">加入</button>
+    </div>
+    ${DB.careHist.length ? `<div class="sumsec">施作歷史</div>` + DB.careHist.slice(-4).reverse().map(h =>
+      `<div class="sumnote"><span>${md(h.date)}</span>${esc(h.kind)}　${esc(h.name)}</div>`).join("") : ""}
+    <p class="tiny" style="text-align:left">按「已施作」只記下今天的日期，不會自動排下一次 —— 下次請等獸醫告訴你再填。原型不發手機通知。</p>
+  </div>`;
+}
+function careSum(from){
+  const h = DB.careHist.filter(x => x.date >= from), up = DB.care.filter(c => c.next);
+  if (!h.length && !up.length) return `<div class="sumnote" style="opacity:.6">未記錄</div>`;
+  return h.map(x => `<div class="sumnote"><span>${md(x.date)}</span>已施作　${esc(x.kind)} ${esc(x.name)}</div>`).join("")
+       + up.map(c => { const st = careStatus(c);
+           return `<div class="sumnote"><span>${md(c.next)}</span>下次　${esc(c.kind)} ${esc(c.name)}${
+             st.cls === "over" || st.cls === "due" ? "（" + st.txt + "）" : ""}</div>`; }).join("");
+}
+
+/* ---- 寫一筆觀察（打字或一鍵快記），換 1 個聲音，可復原 ---- */
+function addNote(text, quick){
+  writeLog({ type:"note", note:text, quick:!!quick, session:"daily" });
+  const rec = DB.log[DB.log.length - 1];
+  rollDay();
+  let gave = null;
+  // 存滿時不給，換取次數每天上限 EARN_CAP
+  if ((DB.testMode || DB.day.earned < EARN_CAP) && DB.stash.length < stashCap()){
+    give(1); DB.day.earned++; gave = DB.stash[DB.stash.length - 1]; }
+  UNDO = { rec, gave };
+  MSG = "記下了：" + text + (gave ? "　→　換到 1 個聲音" : "");
+  save(); VIEW = "today"; render();
+}
+
+let DB = FRESH();
+function load(){ try{ const r = localStorage.getItem(KEY); if(r){ const o = JSON.parse(r); if(o && o.v===1) DB = Object.assign(FRESH(), o); } }catch(e){} }   // 舊版存檔缺欄位就補預設值
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(DB)); }catch(e){} }
+
+function writeLog(o){ DB.log.push(Object.assign({ ts:Date.now(), date:today() }, o)); save(); }
+const avoided = () => DB.log.filter(r => r.reaction === "fear").map(r => r.soundId);
+
+/* ===================== 畫面狀態 ===================== */
+let VIEW = "ob";          // ob | today | timeline | prefs
+let PLAYING = false;
+const el = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const who = () => esc(DB.pet ? DB.pet.name : "牠");
+
+function obSound(){
+  const avoid = avoided();
+  const left = OB_POOL.filter(s => !DB.ob.played.includes(s.id) && !avoid.includes(s.id));
+  return left[0] || OB_POOL[OB_POOL.length-1];
+}
+let PICK = 0;      // Pro 才能選要播哪一個；免費版固定播第一個
+/* ---- 聲音經濟 ----
+   發放  免費 1／天，Pro 2／天；存滿就不發（滿了＝今天白拿，是來用掉的拉力）
+   換取  寫一筆觀察 +1，兩種等級都一樣，一天最多換 2 次
+   存量  免費 3，Pro 5 —— 刻意小。存太多人就會攢著一次放完，
+         那會同時毀掉每日回訪與貓的耳朵
+   播放  每天最多 3 次，★ 不分等級 —— 這是動物安全規定，不是可以賣的東西 */
+const EARN_CAP = 2, PLAY_CAP = 3;
+const stashCap = () => DB.testMode ? 99 : (DB.pro ? 5 : 3);
+const dailyGrant = () => DB.pro ? 2 : 1;
+
+function nextSound(){
+  const avoid = avoided();
+  for (let k = 0; k < SOUNDS.length; k++){
+    const s = SOUNDS[(DB.dailyIdx + k) % SOUNDS.length];
+    if (!avoid.includes(s.id) && !DB.stash.includes(s.id)){ DB.dailyIdx += k + 1; return s.id; }
+  }
+  DB.dailyIdx++; return SOUNDS[DB.dailyIdx % SOUNDS.length].id;   // 全在手上，允許重測
+}
+function give(n){ let got = 0;
+  for (let i = 0; i < n; i++){ if (DB.stash.length >= stashCap()) break; DB.stash.push(nextSound()); got++; }
+  return got; }
+function rollDay(){ const t = today();
+  if (DB.day.date !== t){ DB.day = { date:t, played:0, earned:0 }; give(dailyGrant()); save(); } }
+const playsLeft = () => DB.testMode ? 99 : PLAY_CAP - DB.day.played;
+
+/* ===================== 繪製 ===================== */
+function render(){
+  stopAnim();
+  const v = el("view"); v.className = "view";
+  el("dt").textContent = md(today());
+  el("nav").hidden = !DB.obDone;
+  el("wm").textContent = DB.pet ? DB.pet.name : "小本本";
+
+  if (!DB.obDone) renderOb(v);
+  else if (VIEW === "today") renderToday(v);
+  else if (VIEW === "favs") renderFavs(v);
+  else if (VIEW === "timeline") renderTimeline(v);
+  else renderPrefs(v);
+
+  // 全域提示：操作訊息 ＋ 示範資料標記（v8 的口徑：摘要不得混入示範資料）
+  const hasDemo = DB.log.some(r => r.demo);
+  if (MSG || hasDemo || DB.testMode){
+    const bar = document.createElement("div");
+    bar.className = "banner";
+    bar.innerHTML =
+      (MSG ? `<b>${esc(MSG)}</b>` : "") +
+      (DB.testMode ? `<span>測試模式：所有限制已解除</span>` : "") +
+      (hasDemo ? `<span>目前含 14 天示範資料 —— 審閱用，「審閱 → 清空」可移除</span>` : "");
+    const u = UNDO; UNDO = null;
+    if (u){   // 一鍵快記可復原（v8 p13）：撤掉那筆紀錄，換到的聲音也收回
+      const ub = document.createElement("button");
+      ub.type = "button"; ub.className = "linkbtn"; ub.style.alignSelf = "flex-start"; ub.textContent = "復原";
+      ub.onclick = () => {
+        const i = DB.log.indexOf(u.rec); if (i >= 0) DB.log.splice(i, 1);
+        if (u.gave){ const j = DB.stash.lastIndexOf(u.gave); if (j >= 0) DB.stash.splice(j, 1);
+          DB.day.earned = Math.max(0, DB.day.earned - 1); }
+        MSG = "已復原"; save(); render(); };
+      bar.appendChild(ub);
+    }
+    v.insertBefore(bar, v.firstChild);
+    MSG = "";
+  }
+
+  [...el("nav").children].forEach(b => b.classList.toggle("on", b.dataset.v === VIEW));
+  bind(); panel();
+}
+
+/* ---- 首次啟動 ---- */
+function renderOb(v){
+  const o = DB.ob, s = obSound();
+  if (o.state === "NAMING"){
+    v.classList.add("center");
+    v.innerHTML = `<div class="brand"><b>小本本</b><span>目前只支援貓</span></div>
+      <p class="ask">先告訴我<br>牠叫什麼名字</p>
+      <input type="text" id="nm" placeholder="例如：小花" maxlength="10" autocomplete="off">
+      <button type="button" class="btn primary" id="go" disabled>開　始</button>
+      <p class="tiny">不需要註冊、不需要登入</p>`;
+  }
+  else if (o.state === "PLAYING"){
+    v.classList.add("center");
+    v.innerHTML = `<p class="step">${o.attempt} / 3</p>
+      ${o.attempt === 1
+        ? `<p class="ask">把手機拿到<br><em>${who()}</em> 旁邊<br>然後按播放</p>`
+        : `<p class="ask">那換一個。</p>`}
+      <button type="button" class="btn play${PLAYING?" on":""}" id="play" ${PLAYING?"disabled":""}>
+        ${PLAYING ? "播放中…" : "▶　播　放"}</button>
+      <p class="tiny">音量已限制在安全範圍<br>若牠出現不適請立刻停止</p>`;
+  }
+  else if (o.state === "REPORTING"){
+    v.classList.add("center");
+    v.innerHTML = `<p class="step">${o.attempt} / 3</p>
+      <p class="ask"><em>${who()}</em> 有反應嗎？</p>
+      <button type="button" class="btn interest" data-r="interest">牠有反應，轉頭或靠過來</button>
+      <button type="button" class="btn fear" data-r="fear">牠被嚇到，躲開了</button>
+      <button type="button" class="btn" data-r="none">沒反應</button>
+      <button type="button" class="btn" data-r="absent">牠不在旁邊</button>
+      ${o.replays < 3
+        ? `<button type="button" class="linkbtn" id="again">沒聽清楚？再播一次（還有 ${3-o.replays} 次）</button>`
+        : `<p class="tiny">這個聲音已播 3 次，先選一個吧</p>`}
+      <p class="tiny">每一個選擇都會存成一筆紀錄</p>`;
+  }
+  else if (o.state === "DONE_HIT"){
+    const r = DB.log[DB.log.length-1];
+    v.classList.add("center");
+    v.innerHTML = `<p class="ask">找到了。</p>
+      <p class="say">已為您保存<br><em>${who()}</em> 喜歡的聲音</p>
+      <div class="card rec"><b>${esc(r.name)}</b><span class="sub">${md(r.date)}　轉頭靠過來　·　${CATNAME[r.cat]}</span></div>
+      <button type="button" class="btn primary" id="enter">進入小本本</button>
+      <p class="tiny">明天我再給牠一個新的<br>7 天後就看得出牠的偏好</p>`;
+  }
+  else if (o.state === "DONE_FEAR"){
+    const r = DB.log[DB.log.length-1];
+    v.classList.add("center");
+    v.innerHTML = `<p class="ask">記下來了 ——</p>
+      <p class="say"><em>${who()}</em> 怕這個聲音。<br>我不會再播同類的。</p>
+      <div class="card rec avoid"><b>${esc(r.name)}</b><span class="sub">${md(r.date)}　被嚇到躲開　·　已標記避開</span></div>
+      <button type="button" class="btn primary" id="enter">進入小本本</button>
+      <p class="tiny">換個方向試試<br>明天給牠別的</p>`;
+  }
+  else if (o.state === "DONE_NONE"){
+    v.classList.add("center");
+    v.innerHTML = `<p class="say"><em>${who()}</em> 現在可能在睡覺，<br>或是不在旁邊。</p>
+      <p class="ask" style="font-size:.98rem">沒反應也是資料 ——<br>已經為牠記下 3 筆。</p>
+      <button type="button" class="btn primary" id="enter">進入小本本</button>
+      ${DB.ob.retryRound < 2 ? `<button type="button" class="btn" id="retry">再試一次</button>` : ""}
+      <p class="tiny">晚點再試一次<br>或明天我給牠新的聲音</p>`;
+  }
+  else if (o.state === "PAUSED"){
+    v.classList.add("center");
+    v.innerHTML = `<p class="ask">好，等牠回來再試。</p>
+      <p class="say">已經記下的 ${DB.log.length} 筆，<br>我幫你留著。</p>
+      <button type="button" class="btn primary" id="enter">進入小本本</button>
+      <button type="button" class="btn" id="resume">牠回來了，繼續</button>`;
+  }
+  if (o.state === "PLAYING" || o.state === "REPORTING") v.dataset.sound = s.id;
+}
+
+/* ---- 今日 ---- */
+function renderToday(v){
+  rollDay();
+  // 首次流程暫停超過 7 天自動結案
+  if (DB.ob.state === "PAUSED" && DB.ob.pausedAt && daysUntil(DB.ob.pausedAt) <= -7){ DB.ob.state = "DONE_NONE"; save(); }
+  const cap = stashCap(), n = DB.stash.length, full = n >= cap;
+  const left = playsLeft(), canEarn = DB.testMode || DB.day.earned < EARN_CAP;
+  const days = new Set(DB.log.map(r => r.date)).size;
+  if (PICK >= n) PICK = 0;
+  const sel = n ? byId(DB.stash[DB.pro ? PICK : 0]) : null;
+  const prev = sel && isRetest(sel.id) ? lastRecord(sel.id) : null;
+
+  const chips = DB.stash.map((id,i) => { const s = byId(id);
+    const on = DB.pro ? i === PICK : i === 0;
+    return `<button type="button" class="chipbtn${on?" on":""}" data-pick="${i}"
+      ${DB.pro ? "" : "disabled"}>${esc(s.n)}${isRetest(id) ? '<span class="badge">重測</span>' : ""}</button>`; }).join("");
+
+  v.innerHTML = `
+    ${careBanner()}
+    ${DB.ob.state === "PAUSED" ? `<div class="card">
+      <span class="hd">首次流程暫停中</span>
+      <b>繼續幫 ${who()} 找喜歡的聲音</b>
+      <span class="sub">已試 ${DB.ob.played.length} / 3 個　·　超過 7 天沒繼續會自動結束</span>
+      <button type="button" class="btn" id="obresume">牠回來了，繼續</button></div>` : ""}
+    <div class="card">
+      <span class="hd">寵物互動　　存了 ${n} / ${cap} 個${DB.pro ? "　PRO" : ""}</span>
+      ${n ? `<div class="chips">${chips}</div>` : ""}
+      ${n === 0
+        ? `<b>聲音用完了</b><span class="sub">${
+             left <= 0 ? "今天的互動次數也用完了。明天會再給 " + dailyGrant() + " 個。"
+             : canEarn ? "寫一筆今天的觀察，立刻換一個。"
+             : "明天會再給 " + dailyGrant() + " 個。"}</span>`
+        : left <= 0
+        ? `<b>今天已經互動 ${PLAY_CAP} 次了</b>
+           <span class="sub">聲音留著，明天再用 —— 不連放，是為了貓。</span>`
+        : `<button type="button" class="btn play${PLAYING?" on":""}" id="dplay" ${PLAYING?"disabled":""}>
+             ${PLAYING ? "播放中…" : "▶　播放　" + esc(sel.n)}</button>
+           <p class="tiny">${CATNAME[sel.cat]}　·　今天還可以互動 ${DB.testMode?"∞":left} 次<br>
+             音量已限制在安全範圍。若牠出現不適請立刻停止</p>
+           ${prev ? `<p class="tiny" style="color:var(--indigo)">重測：上次 ${md(prev.date)} ${RLG[prev.reaction]}。這次呢？</p>` : ""}`}
+      ${full ? `<p class="tiny" style="color:var(--apricot)">存滿了，明天不會再發 —— 先用掉幾個</p>` : ""}
+      ${!DB.pro ? `<p class="tiny">免費版由系統給聲音。Pro 可以自己挑要播哪一個</p>` : ""}
+    </div>
+
+    <div class="card">
+      <span class="hd">說一句，記下今天${canEarn && !full ? "　→　換 1 個聲音" : ""}</span>
+      <span class="sub">一鍵快記，點一下就記</span>
+      <div class="chips">${QUICK.map(q => `<button type="button" class="chipbtn" data-quick="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+      <textarea id="note" rows="2" placeholder="或自己寫：今天吃得比較少，睡了一整個下午"></textarea>
+      <button type="button" class="btn" id="savenote">存起來${canEarn && !full ? "，換 1 個聲音" : ""}</button>
+      <p class="tiny">${full ? "存滿了，先用掉幾個才換得到"
+        : canEarn ? "今天還可以換 " + (EARN_CAP - DB.day.earned) + " 次。原型只支援打字，正式版語音優先"
+        : "今天換取次數用完了，但紀錄隨時可以寫"}</p>
+    </div>
+    <p class="tiny">本月記錄 ${days} 天　·　共 ${DB.log.length} 筆</p>`;
+}
+
+/* ===================== 聲音檔案動畫 =====================
+   ★ 配色依據：貓是二色視覺，兩種錐細胞約 450nm（藍）與 550–560nm（黃綠），
+     紅色對貓接近灰綠；視力約 20/100–20/200，動作的影響遠大於顏色。
+     所以動畫只用藍與黃綠的高對比，並以「移動」為主角。
+   ★ 刻意不宣稱「你的貓偏好某個顏色」—— 查不到任何對照實驗支持，
+     那類說法都是從生理學外推的行銷內容。我們只說「用貓看得見的顏色畫的」。 */
+const MOTIF = {
+  food:   { shape:"bowl", n:1, label:"食物類" },
+  hunt:   { shape:"bird", n:3, label:"狩獵類" },
+  social: { shape:"ear",  n:2, label:"社交類" },
+  play:   { shape:"bell", n:2, label:"玩具類" },
+  env:    { shape:"leaf", n:5, label:"環境類" }
+};
+const collected = () => DB.favs.length + DB.customs.length;
+
+/* 「專屬」靠的是確定性 ＋ 參數組合，不是生成式。
+   同一隻貓每次打開都要長一樣，否則分享出去就不是「牠的」動畫。
+   種子取自名字＋主導類別，一般程式即可，不需要任何模型。 */
+const hash = s => { let h = 2166136261;
+  for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0; };
+const ACCENTS = ["#CBE045", "#9FD84B", "#7FD6C0", "#DCE26A"];   // 全在貓的可見範圍
+
+function animParams(){
+  const rows = DB.log.filter(r => r.type !== "note" && r.reaction !== "absent");
+  const g = {};
+  rows.forEach(r => { g[r.cat] = g[r.cat] || {hit:0, all:0}; g[r.cat].all++;
+    if (r.reaction === "interest") g[r.cat].hit++; });
+  let top = null, best = -1;
+  Object.keys(g).forEach(k => { const p = g[k].hit / g[k].all;
+    if (g[k].hit > 0 && p > best){ best = p; top = k; } });
+  if (!top || !MOTIF[top]) top = Object.keys(g).find(k => MOTIF[k]) || "hunt";
+  return { top, hit: g[top] ? g[top].hit : 0, all: g[top] ? g[top].all : 0,
+           days: new Set(DB.log.map(r => r.date)).size,
+           name: DB.pet ? DB.pet.name : "牠", ts: Date.now() };
+}
+
+let animRAF = null;
+function stopAnim(){ if (animRAF){ cancelAnimationFrame(animRAF); animRAF = null; } }
+
+function drawAnim(cv, p){
+  stopAnim();
+  const ctx = cv.getContext("2d");
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = cv.clientWidth || 280, H = Math.round(W * 0.78);
+  cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const m = MOTIF[p.top] || MOTIF.hunt;
+  const sd = hash((p.name || "x") + "|" + p.top);
+  const pattern = sd % 3;                        // 0 橫向擺盪 1 繞圈 2 飄落
+  const LIME = ACCENTS[(sd >> 4) % ACCENTS.length];
+  const count = m.n + (sd >> 8) % 2;             // 同類別也會有兩種密度
+  const BLUE_D = "#0D1840", BLUE_M = "#1E2F75", CAT = "#7FA3E8";
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let t = still ? 0.9 : 0;
+
+  function shape(x, y, s, kind){
+    ctx.fillStyle = LIME; ctx.beginPath();
+    if (kind === "bird"){ ctx.ellipse(x, y, s*1.5, s*.55, Math.sin(t*5)*.5, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+s*1.2, y-s*.2, s*.5, s*.5, 0, 0, 7); }
+    else if (kind === "bowl"){ ctx.arc(x, y, s, Math.PI*.1, Math.PI*.9); }
+    else if (kind === "bell"){ ctx.arc(x, y, s*.9, 0, 7); }
+    else if (kind === "leaf"){ ctx.ellipse(x, y, s*1.3, s*.5, t*2 + x, 0, 7); }
+    else { ctx.moveTo(x-s, y+s); ctx.lineTo(x, y-s*1.2); ctx.lineTo(x+s, y+s); ctx.closePath(); }
+    ctx.fill();
+  }
+
+  function frame(){
+    const gr = ctx.createLinearGradient(0, 0, 0, H);
+    gr.addColorStop(0, BLUE_D); gr.addColorStop(1, BLUE_M);
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+
+    const pts = [];
+    for (let i = 0; i < count; i++){
+      const ph = t * .9 + i * (6.28 / count);
+      let x, y;
+      if (pattern === 0){ x = W * (.5 + .34 * Math.sin(ph));
+                          y = H * (.34 + .16 * Math.sin(ph * 1.7 + i)); }
+      else if (pattern === 1){ x = W * (.5 + .3 * Math.cos(ph));
+                               y = H * (.36 + .2 * Math.sin(ph)); }
+      else { x = W * (.18 + .64 * ((i + 1) / (count + 1)) + .06 * Math.sin(ph * 2));
+             y = H * (((t * .22 + i / count) % 1) * .62 + .06); }
+      pts.push([x, y]); shape(x, y, Math.max(7, W * .035), m.shape);
+    }
+
+    // 貓：耳朵朝向最近的移動物件 —— 這就是整個產品的隱喻
+    const cx = W / 2, cy = H * .82, r = W * .14;
+    const tgt = pts.reduce((a, b) => (Math.abs(b[0]-cx) < Math.abs(a[0]-cx) ? b : a), pts[0] || [cx, 0]);
+    const tilt = Math.max(-.42, Math.min(.42, (tgt[0] - cx) / W * 1.6));
+    ctx.fillStyle = CAT;
+    [-1, 1].forEach(sd => { ctx.save(); ctx.translate(cx + sd*r*.62, cy - r*.72);
+      ctx.rotate(tilt + sd*.22); ctx.beginPath();
+      ctx.moveTo(-r*.34, r*.34); ctx.lineTo(0, -r*.62); ctx.lineTo(r*.34, r*.34);
+      ctx.closePath(); ctx.fill(); ctx.restore(); });
+    ctx.beginPath(); ctx.ellipse(cx, cy, r, r*.88, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = BLUE_D;
+    [-1, 1].forEach(sd => { ctx.beginPath();
+      ctx.ellipse(cx + sd*r*.36, cy - r*.1, r*.14, r*.19, 0, 0, 7); ctx.fill(); });
+
+    if (still){ animRAF = null; return; }
+    t += .016; animRAF = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+/* ---- 專屬聲音區 ----
+   跟「互動」分開的兩件事：
+     互動 = 發現新聲音，消耗制、有存量與每日上限
+     專屬 = 已知牠喜歡的，永久保留、可重複播，不計入每日次數
+   ★ 正式版這裡仍需要單次連播上限（動物安全），原型未做。 */
+function renderFavs(v){
+  const name = who();
+  const favs = DB.favs.map(byId).filter(Boolean);
+  const cs = DB.customs;
+  const canAdd = DB.pro || DB.testMode || cs.length < CUSTOM_FREE;
+
+  const got = collected(), unlocked = DB.testMode || got >= COLLECT_UNLOCK;
+  const p = unlocked ? (ANIMVIEW >= 0 && DB.anims[ANIMVIEW] ? DB.anims[ANIMVIEW] : animParams()) : null;
+  const canSave = DB.pro || DB.testMode || DB.anims.length < ANIM_FREE;
+
+  v.innerHTML = `
+    <div class="card">
+      <span class="hd">${name} 的聲音檔案動畫</span>
+      ${unlocked
+        ? `<canvas id="anim" class="animcv"></canvas>
+           <b>${esc(name)} ・ ${MOTIF[p.top].label}</b>
+           <span class="sub">記錄 ${p.days} 天　·　${MOTIF[p.top].label} ${p.hit}/${p.all} 有反應</span>
+           <p class="tiny" style="text-align:left">${esc(name)} 這 ${p.days} 天對${MOTIF[p.top].label}的反應最多，${p.all} 次裡有 ${p.hit} 次。
+             <span style="opacity:.6">（DEMO 用固定句型。正式版這一句才是本機 LLM 的位置 —— 動畫本體不經過模型）</span></p>
+           <div class="row">
+             <button type="button" class="btn grow" id="saveanim" ${canSave?"":"disabled"}>
+               ${canSave ? "保存這一張" : "免費版只能存 " + ANIM_FREE + " 張"}</button>
+             <button type="button" class="btn grow" id="shareanim">分享</button>
+           </div>
+           ${ANIMVIEW >= 0 ? `<div class="row"><span class="sub grow">正在看：${dstr(p.ts)} 保存的版本</span>
+             <button type="button" class="linkbtn" id="animnow">回到目前</button></div>` : ""}
+           ${DB.anims.length ? `<div class="favlist">${DB.anims.map((a, i) => `
+             <div class="favrow"><b class="grow">${dstr(a.ts)}　${MOTIF[a.top] ? MOTIF[a.top].label : ""}</b>
+               <span class="sub">記錄 ${a.days} 天</span>
+               <button type="button" class="miniplay" data-va="${i}">▶</button>
+               <button type="button" class="heart on" data-vdel="${i}">×</button></div>`).join("")}</div>` : ""}
+           <p class="tiny">已保存 ${DB.anims.length}${DB.pro ? "　PRO 無限" : " / " + ANIM_FREE}。
+             用貓看得見的顏色畫的 —— 貓是二色視覺，藍與黃綠看得最清楚，紅色對牠接近灰綠</p>`
+        : `<div class="lockbox">
+             <b>再收集 ${COLLECT_UNLOCK - got} 個專屬聲音就解鎖</b>
+             <div class="bar"><i style="width:${Math.round(got/COLLECT_UNLOCK*100)}%"></i></div>
+             <span class="sub">${got} / ${COLLECT_UNLOCK}</span>
+           </div>
+           <p class="tiny">依 ${esc(name)} 的聲音偏好生成一張專屬動畫，可以保存與分享</p>`}
+    </div>
+
+    <div class="card">
+      <span class="hd">${name} 的專屬聲音　${favs.length} 個</span>
+      ${favs.length
+        ? `<div class="favlist">${favs.map(s => `
+            <div class="favrow"><b class="grow">${esc(s.n)}</b>
+              <span class="sub">${CATNAME[s.cat]}</span>
+              <button type="button" class="miniplay" data-fp="${s.id}">▶</button>
+              <button type="button" class="heart on" data-unfav="${s.id}">♥</button></div>`).join("")}</div>
+           <p class="tiny">可以重複播，不計入每日互動次數</p>`
+        : `<p class="empty">還沒有專屬聲音。<br>到時間軸，把 ${name} 有反應的那幾個點愛心。</p>`}
+    </div>
+
+    <div class="card">
+      <span class="hd">自訂錄音　${cs.length}${DB.pro ? "" : " / " + CUSTOM_FREE}${DB.pro ? "　PRO 無限" : ""}</span>
+      ${cs.length
+        ? `<div class="favlist">${cs.map(c => `
+            <div class="favrow"><b class="grow">${esc(c.n)}</b>
+              <span class="sub">自訂</span>
+              <button type="button" class="miniplay" data-cp="${c.id}">▶</button>
+              <button type="button" class="heart on" data-delc="${c.id}">×</button></div>`).join("")}</div>`
+        : ""}
+      ${canAdd
+        ? `<input type="file" id="up" accept="audio/*" hidden>
+           <button type="button" class="btn" id="upbtn">選一個音檔加進來</button>
+           <p class="tiny">${DB.pro ? "Pro 可以加無限個。" : "免費版 1 個。"}原型用上傳代替錄音 —— 瀏覽器拿不到麥克風權限，正式版是直接錄<br>檔案 300KB 以內，存在本機</p>`
+        : `<button type="button" class="btn" id="upbtn" disabled>免費版只能存 1 個自訂錄音</button>
+           <p class="tiny">Pro 可以存無限個 —— 例如用你自己的聲音叫牠的名字</p>`}
+    </div>`;
+}
+
+/* ---- 時間軸 ---- */
+/* 可編輯、查找與刪除（v8 p6）。首次流程沒有返回鍵 —— 點錯就在這裡改。 */
+function renderTimeline(v){
+  if (!DB.log.length){ v.classList.add("center");
+    v.innerHTML = `<p class="empty">還沒有紀錄。<br>回到互動，放一個聲音或寫一句。</p>`; return; }
+  const rows = DB.log.map((r, i) => [r, i]).reverse()
+    .filter(([r]) => TLF === "all" || (TLF === "note" ? r.type === "note" : r.type !== "note"));
+  const filt = `<div class="chips">${[["all","全部"],["sound","聲音"],["note","觀察"]].map(([k, t]) =>
+    `<button type="button" class="chipbtn${TLF === k ? " on" : ""}" data-tlf="${k}">${t}</button>`).join("")}</div>`;
+
+  v.innerHTML = filt + (rows.length ? rows.map(([r, i]) => {
+    const editing = EDIT === i;
+    const edBtn = `<button type="button" class="linkbtn" data-edit="${i}">${editing ? "收起" : "修改"}</button>`;
+    if (r.type === "note") return `<div class="card">
+        <div class="row"><span class="sub">${md(r.date)}</span>
+          <span class="pill note">${r.quick ? "快記" : "觀察"}</span><span class="grow"></span>${edBtn}</div>
+        ${editing
+          ? `<textarea id="editnote" rows="2">${esc(r.note)}</textarea>
+             <div class="row"><button type="button" class="btn grow" data-savenote="${i}">存</button>
+               <button type="button" class="btn grow" data-del="${i}">刪除這筆</button></div>`
+          : `<b style="font-weight:400">${esc(r.note)}</b>`}</div>`;
+    return `<div class="card">
+        <div class="row"><span class="sub">${md(r.date)}</span>
+          <b class="grow">${esc(r.name)}</b><span class="pill ${r.reaction}">${RLG[r.reaction]}</span>
+          ${r.reaction === "fear" ? "" : `<button type="button" class="heart${DB.favs.includes(r.soundId) ? " on" : ""}"
+              data-fav="${r.soundId}" title="加進專屬聲音">♥</button>`}</div>
+        <div class="row"><span class="sub grow">${CATNAME[r.cat]}　·　${r.session === "onboarding" ? "首次流程" : "每日"}</span>${edBtn}</div>
+        ${editing ? `<span class="sub">點錯了？改成：</span>
+          <div class="chips">${["interest","fear","none","absent"].map(k =>
+            `<button type="button" class="chipbtn${r.reaction === k ? " on" : ""}" data-setr="${i}:${k}">${RLG[k]}</button>`).join("")}</div>
+          <button type="button" class="btn" data-del="${i}">刪除這筆</button>` : ""}</div>`;
+  }).join("") : `<p class="empty">這個篩選下沒有紀錄</p>`);
+}
+
+/* ---- 毛孩頁：基本資料 ＋ 偏好 ＋ 看診摘要 ---- */
+let SUMDAYS = 14;
+
+function shiftDate(n){ const d = new Date();
+  d.setDate(d.getDate() - n + 1);
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+
+function summary(days){
+  const from = shiftDate(days);
+  const rows = DB.log.filter(r => r.date >= from);
+  const snd = rows.filter(r => r.type !== "note");
+  const notes = rows.filter(r => r.type === "note");
+  const have = new Set(rows.map(r => r.date));
+  const miss = [];
+  for (let i = 0; i < days; i++){ const d = shiftDate(days - i); if (!have.has(d)) miss.push(d); }
+  return { from, days, rows, snd, notes, miss, covered: have.size };
+}
+
+function renderPrefs(v){
+  const name = who();
+  const days = new Set(DB.log.map(r => r.date)).size;
+  const snd = DB.log.filter(r => r.type !== "note" && r.reaction !== "absent");
+  const s = summary(SUMDAYS);
+  const RL = {interest:"有反應", fear:"被嚇到", none:"沒反應", absent:"不在"};
+
+  /* 基本資料分次拿，而且每次給理由 —— 沒有用途就不問 */
+  const asks = [];
+  if ((days >= 7  || DB.testMode) && !(DB.pet && DB.pet.age))
+    asks.push(["age",  "牠幾歲了？", "這樣可以跟同齡的貓比較反應"]);
+  if ((days >= 14 || DB.testMode) && !(DB.pet && DB.pet.breed))
+    asks.push(["breed","什麼品種？", "不同品種的聽覺差異不小"]);
+
+  v.innerHTML = `
+    <div class="card">
+      <span class="hd">基本資料</span>
+      <div class="favrow"><b class="grow">${esc(name)}</b><span class="sub">貓　·　記錄 ${days} 天</span></div>
+      ${DB.pet && DB.pet.age   ? `<div class="favrow"><b class="grow">年齡</b><span class="sub">${esc(DB.pet.age)}</span></div>` : ""}
+      ${DB.pet && DB.pet.breed ? `<div class="favrow"><b class="grow">品種</b><span class="sub">${esc(DB.pet.breed)}</span></div>` : ""}
+      ${asks.length
+        ? asks.map(a => `<div class="askbox">
+             <b>${a[1]}</b><span class="sub">${a[2]}</span>
+             <div class="row"><input type="text" class="grow" id="ask_${a[0]}" placeholder="選填">
+               <button type="button" class="btn" style="width:auto" data-ask="${a[0]}">存</button></div>
+           </div>`).join("")
+        : `<p class="tiny" style="text-align:left">品種、生日、體重、病史分次問，每一項都要說得出它會出現在哪裡。第一次開啟只問名字。</p>`}
+    </div>
+
+    ${careCard()}
+
+    <div class="card">
+      <span class="hd">聲音偏好</span>
+      ${days < 7 && !DB.testMode
+        ? `<b>再記錄 ${7-days} 天就看得到</b>
+           <span class="sub">已記錄 ${days} / 7 天</span>
+           <div class="bar"><i style="width:${Math.round(days/7*100)}%"></i></div>
+           <p class="tiny" style="text-align:left">累積七天之後，才分得出「牠不喜歡這個聲音」和「牠今天剛好沒心情」。</p>
+           ${snd.length ? catBars(snd) : ""}`
+        : `${catBars(snd)}
+           <p class="tiny" style="text-align:left">依類別計算「有反應」的比例。只是行為紀錄，不是健康判斷。</p>`}
+    </div>
+
+    ${retestCard()}
+
+    <div class="card">
+      <span class="hd">看診摘要</span>
+      <div class="chips">
+        ${[7,14,30].map(d => `<button type="button" class="chipbtn${SUMDAYS===d?" on":""}" data-sum="${d}">最近 ${d} 天</button>`).join("")}
+      </div>
+
+      <div class="sumdoc">
+        <div class="sumhd">${esc(name)}　·　${md(s.from)} – ${md(today())}</div>
+        <div class="sumrow"><span>互動</span><b>${s.snd.length} 次</b></div>
+        <div class="sumrow"><span>觀察</span><b>${s.notes.length} 筆</b></div>
+        <div class="sumrow"><span>有記錄天數</span><b>${s.covered} / ${s.days} 天</b></div>
+        ${s.snd.length ? `<div class="sumsec">反應性</div>${catBars(s.snd.filter(r=>r.reaction!=="absent"))}` : ""}
+        ${s.notes.length
+          ? `<div class="sumsec">日常觀察</div>
+             ${s.notes.slice(-5).reverse().map(n => `<div class="sumnote"><span>${md(n.date)}</span>${esc(n.note)}</div>`).join("")}`
+          : `<div class="sumsec">日常觀察</div><div class="sumnote" style="opacity:.6">期間內沒有文字觀察</div>`}
+        <div class="sumsec">疫苗 · 驅蟲</div>
+        ${careSum(s.from)}
+        <div class="sumsec">體重</div>
+        <div class="sumnote" style="opacity:.6">未記錄</div>
+        ${s.miss.length
+          ? `<div class="summiss">期間內 ${s.miss.length} 天沒有記錄：${s.miss.slice(0,6).map(md).join("、")}${s.miss.length>6?" …":""}</div>` : ""}
+        <div class="sumfoot">未記錄不等於正常。本摘要只整理實際記錄，不含推測，也不是診斷。</div>
+      </div>
+
+      ${DB.pro
+        ? `<button type="button" class="btn" id="exp">匯出 PDF 給獸醫</button>
+           <p class="tiny">Pro 可以匯出、產生分享連結與列印</p>`
+        : `<div class="paywall">
+             <b>帶走摘要是 Pro 功能</b>
+             <span class="sub">匯出 PDF　·　分享連結給獸醫　·　列印</span>
+             <button type="button" class="btn primary" id="trial">免費試用 14 天</button>
+             <p class="tiny">不綁卡　·　價格未定<br>
+               ★ 在畫面上看摘要永遠免費 —— 看診時拿手機給獸醫看，不必付錢</p>
+           </div>`}
+    </div>`;
+}
+/* 重測對照 —— 全站唯一競品沒有的功能，所以放在 Pro */
+function retestCard(){
+  const pr = retestPairs();
+  return `<div class="card">
+    <span class="hd">重測對照${DB.pro ? "　PRO" : ""}</span>
+    ${!pr.length
+      ? `<p class="tiny" style="text-align:left">同一個聲音隔 ${RETEST_DAYS} 天以上再放一次，就會出現在這裡（正式版 30 天）。</p>`
+      : (DB.pro || DB.testMode)
+      ? pr.map(x => { const same = x.f.reaction === x.l.reaction;
+          return `<div class="favrow"><b class="grow">${esc(x.name)}</b>
+            <span class="sub">${md(x.f.date)} ${RLG[x.f.reaction]} → ${md(x.l.date)} ${RLG[x.l.reaction]}</span>
+            <span class="pill ${same ? "none" : "absent"}">${same ? "一致" : "變了"}</span></div>`; }).join("")
+        + `<p class="tiny" style="text-align:left">反應變了不等於有問題 —— 也可能只是那天沒心情。連續幾次都變，再留意。</p>`
+      : `<div class="lockbox"><b>${pr.length} 個聲音可以對照</b>
+           <span class="sub">同一個聲音隔一段時間再放，反應變了沒</span>
+           <button type="button" class="btn primary" id="trial2">免費試用 14 天看對照</button></div>`}
+  </div>`;
+}
+
+function catBars(rows){
+  const g = {};
+  rows.forEach(r => { g[r.cat] = g[r.cat] || {hit:0, all:0}; g[r.cat].all++; if (r.reaction === "interest") g[r.cat].hit++; });
+  const ks = Object.keys(g).sort((a,b) => g[b].hit/g[b].all - g[a].hit/g[a].all);
+  if (!ks.length) return `<span class="sub">還沒有聲音紀錄</span>`;
+  return ks.map(k => { const p = Math.round(g[k].hit/g[k].all*100);
+    return `<div><div class="row"><span class="grow" style="font-size:.85rem">${CATNAME[k]}</span>
+      <span class="sub">${g[k].hit}/${g[k].all}　${p}%</span></div>
+      <div class="bar"><i style="width:${p}%"></i></div></div>`; }).join("");
+}
+
+/* ===================== 事件 ===================== */
+function bind(){
+  const nm = el("nm");
+  if (nm){ const go = el("go");
+    nm.addEventListener("input", () => go.disabled = !nm.value.trim());
+    nm.addEventListener("keydown", e => { if (e.key === "Enter" && nm.value.trim()) startOb(nm.value); });
+    go.addEventListener("click", () => startOb(nm.value)); }
+
+  const p = el("play");  if (p) p.addEventListener("click", obPlay);
+  const a = el("again"); if (a) a.addEventListener("click", () => { playSound(obSound().id); DB.ob.replays++; save(); render(); });
+  el("view").querySelectorAll("[data-r]").forEach(b => b.addEventListener("click", () => obReport(b.dataset.r)));
+
+  const en = el("enter");  if (en) en.addEventListener("click", () => { DB.obDone = true; VIEW = "today"; save(); render(); });
+  const rt = el("retry");  if (rt) rt.addEventListener("click", () => {
+    DB.ob.retryRound++; DB.ob.attempt = 1; DB.ob.replays = 0; DB.ob.played = []; DB.ob.state = "PLAYING"; save(); render(); });
+  const rs = el("resume"); if (rs) rs.addEventListener("click", () => { DB.ob.replays = 0; DB.ob.state = "PLAYING"; save(); render(); });
+
+  const dp = el("dplay"); if (dp) dp.addEventListener("click", dailyPlay);
+  const sn = el("savenote"); if (sn) sn.addEventListener("click", () => {
+    const t = el("note").value.trim(); if (t) addNote(t, false); });
+  el("view").querySelectorAll("[data-pick]").forEach(b =>
+    b.addEventListener("click", () => { PICK = +b.dataset.pick; render(); }));
+
+  // 一鍵快記
+  el("view").querySelectorAll("[data-quick]").forEach(b =>
+    b.addEventListener("click", () => addNote(b.dataset.quick, true)));
+  // 首次流程暫停續接
+  const or = el("obresume"); if (or) or.addEventListener("click", () => {
+    DB.obDone = false; DB.ob.state = "PLAYING"; DB.ob.replays = 0; save(); render(); });
+
+  // 時間軸：篩選、修改、刪除
+  el("view").querySelectorAll("[data-tlf]").forEach(b =>
+    b.addEventListener("click", () => { TLF = b.dataset.tlf; EDIT = -1; render(); }));
+  el("view").querySelectorAll("[data-edit]").forEach(b =>
+    b.addEventListener("click", () => { const i = +b.dataset.edit; EDIT = EDIT === i ? -1 : i; render(); }));
+  el("view").querySelectorAll("[data-setr]").forEach(b =>
+    b.addEventListener("click", () => { const [i, k] = b.dataset.setr.split(":"); const r = DB.log[+i];
+      r.reaction = k;
+      if (k === "fear") DB.favs = DB.favs.filter(id => id !== r.soundId);   // 改成怕的就從專屬拿掉
+      EDIT = -1; MSG = "改好了：" + r.name + " → " + RLG[k]; save(); render(); }));
+  el("view").querySelectorAll("[data-savenote]").forEach(b =>
+    b.addEventListener("click", () => { const t = (el("editnote") || {}).value;
+      if (t && t.trim()) DB.log[+b.dataset.savenote].note = t.trim();
+      EDIT = -1; save(); render(); }));
+  el("view").querySelectorAll("[data-del]").forEach(b =>
+    b.addEventListener("click", () => { DB.log.splice(+b.dataset.del, 1);
+      EDIT = -1; MSG = "刪掉了"; save(); render(); }));
+
+  // 疫苗／驅蟲
+  const ca = el("cadd"); if (ca) ca.addEventListener("click", () => {
+    const name = el("cn").value.trim();
+    if (!name){ MSG = "請先填名稱"; render(); return; }
+    DB.care.push({ id:"c" + Date.now(), kind:el("ck").value, name, next:el("cd").value || "",
+                   lead:+el("cl2").value, on:true });
+    save(); render(); });
+  el("view").querySelectorAll("[data-done]").forEach(b =>
+    b.addEventListener("click", () => { const it = DB.care.find(c => c.id === b.dataset.done); if (!it) return;
+      DB.careHist.push({ date:today(), kind:it.kind, name:it.name });
+      it.next = "";        // 不自動續排，等獸醫告知再補
+      MSG = "記下今天施作了。下次日期請等獸醫告訴你再填"; save(); render(); }));
+  el("view").querySelectorAll("[data-setnext]").forEach(b =>
+    b.addEventListener("click", () => { const it = DB.care.find(c => c.id === b.dataset.setnext);
+      const d = (el("nx_" + b.dataset.setnext) || {}).value; if (!it || !d) return;
+      it.next = d; save(); render(); }));
+  el("view").querySelectorAll("[data-cdel]").forEach(b =>
+    b.addEventListener("click", () => { DB.care = DB.care.filter(c => c.id !== b.dataset.cdel); save(); render(); }));
+
+  // 已保存的動畫：同一個種子，重畫出來一模一樣
+  el("view").querySelectorAll("[data-va]").forEach(b =>
+    b.addEventListener("click", () => { ANIMVIEW = +b.dataset.va; render(); }));
+  el("view").querySelectorAll("[data-vdel]").forEach(b =>
+    b.addEventListener("click", () => { DB.anims.splice(+b.dataset.vdel, 1); ANIMVIEW = -1; save(); render(); }));
+  const an = el("animnow"); if (an) an.addEventListener("click", () => { ANIMVIEW = -1; render(); });
+  const t2 = el("trial2"); if (t2) t2.addEventListener("click", () => {
+    DB.pro = true; give(1); MSG = "試用已開始（原型直接切成 Pro）。右上「審閱」可以切回免費"; save(); render(); });
+
+  // 愛心：從時間軸加進專屬聲音
+  el("view").querySelectorAll("[data-fav]").forEach(b =>
+    b.addEventListener("click", () => { const id = b.dataset.fav;
+      const i = DB.favs.indexOf(id);
+      if (i >= 0) DB.favs.splice(i,1); else DB.favs.push(id);
+      save(); render(); }));
+  el("view").querySelectorAll("[data-unfav]").forEach(b =>
+    b.addEventListener("click", () => {
+      DB.favs.splice(DB.favs.indexOf(b.dataset.unfav),1); save(); render(); }));
+
+  // 專屬聲音區：重複播放，不計入每日次數
+  el("view").querySelectorAll("[data-fp]").forEach(b =>
+    b.addEventListener("click", () => playSound(b.dataset.fp)));
+  el("view").querySelectorAll("[data-cp]").forEach(b =>
+    b.addEventListener("click", () => playCustom(b.dataset.cp)));
+  el("view").querySelectorAll("[data-delc]").forEach(b =>
+    b.addEventListener("click", () => { const id = b.dataset.delc;
+      DB.customs = DB.customs.filter(c => c.id !== id); bufCache.delete(id); save(); render(); }));
+
+  const ub = el("upbtn"), up = el("up");
+  if (ub && up){ ub.addEventListener("click", () => up.click());
+    up.addEventListener("change", () => upload(up.files[0])); }
+
+  // 毛孩頁
+  el("view").querySelectorAll("[data-sum]").forEach(b =>
+    b.addEventListener("click", () => { SUMDAYS = +b.dataset.sum; render(); }));
+  el("view").querySelectorAll("[data-ask]").forEach(b =>
+    b.addEventListener("click", () => { const k = b.dataset.ask;
+      const t = (el("ask_" + k) || {}).value; if (!t || !t.trim()) return;
+      DB.pet[k] = t.trim().slice(0, 16); save(); render(); }));
+  const tr2 = el("trial");
+  if (tr2) tr2.addEventListener("click", () => {
+    DB.pro = true; give(1); MSG = "試用已開始（原型直接切成 Pro）。右上「審閱」可以切回免費";
+    save(); render(); });
+  const ex = el("exp");
+  if (ex) ex.addEventListener("click", () => {
+    MSG = "原型沒辦法輸出檔案（瀏覽器沙箱擋住下載與列印）。正式版才會真的產出 PDF"; render(); });
+
+  // 動畫
+  const cv = el("anim");
+  if (cv) requestAnimationFrame(() =>
+    drawAnim(cv, ANIMVIEW >= 0 && DB.anims[ANIMVIEW] ? DB.anims[ANIMVIEW] : animParams()));
+  const sa = el("saveanim");
+  if (sa) sa.addEventListener("click", () => {
+    if (!DB.pro && DB.anims.length >= ANIM_FREE) return;
+    DB.anims.push(animParams()); MSG = "已保存。共 " + DB.anims.length + " 張"; save(); render(); });
+  const sh2 = el("shareanim");
+  if (sh2) sh2.addEventListener("click", () => {
+    MSG = "原型沒辦法輸出檔案（瀏覽器沙箱擋住下載與系統分享）。正式版是存成短影片或圖片再分享";
+    render(); });
+}
+
+/* ---- 自訂錄音 ---- */
+function upload(file){
+  if (!file) return;
+  if (file.size > MAX_UPLOAD){
+    MSG = "檔案太大（" + Math.round(file.size/1024) + "KB）。原型限 300KB 以內"; render(); return; }
+  const fr = new FileReader();
+  fr.onerror = () => { MSG = "讀不到這個檔案"; render(); };
+  fr.onload = () => {
+    const c = { id:"custom_" + Date.now(), n:file.name.replace(/\.[^.]+$/,"").slice(0,20) || "自訂錄音", data:fr.result };
+    DB.customs.push(c);
+    try { localStorage.setItem(KEY, JSON.stringify(DB)); }
+    catch(e){ DB.customs.pop(); MSG = "本機空間不足，存不下。先刪掉一個再試"; render(); return; }
+    MSG = "已加入：" + c.n; render();
+  };
+  fr.readAsDataURL(file);
+}
+async function playCustom(id){
+  const c = actx(); if (c.state === "suspended") await c.resume();
+  const cu = DB.customs.find(x => x.id === id); if (!cu) return;
+  try{
+    if (!bufCache.has(id)){
+      const ab = await (await fetch(cu.data)).arrayBuffer();
+      bufCache.set(id, await c.decodeAudioData(ab));
+    }
+    const src = c.createBufferSource(); src.buffer = bufCache.get(id);
+    const b = bus(c); b.gain.value = 1;     // 自訂音檔一樣走限幅器
+    src.connect(b); src.start();
+  } catch(e){ MSG = "這個格式播不出來，試試 m4a 或 mp3"; render(); }
+}
+
+function startOb(name){
+  DB.pet = { name: name.trim(), species:"cat", createdAt: Date.now() };
+  DB.ob.state = "PLAYING"; DB.ob.attempt = 1; DB.ob.replays = 0; save(); render();
+}
+function obPlay(){
+  const s = obSound(); playSound(s.id);
+  if (!DB.ob.played.includes(s.id)) DB.ob.played.push(s.id);
+  PLAYING = true; save(); render();
+  setTimeout(() => { PLAYING = false; DB.ob.state = "REPORTING"; save(); render(); }, 2600);
+}
+function obReport(r){
+  const s = obSound();
+  writeLog({ soundId:s.id, name:s.n, cat:s.cat, reaction:r, attempt:DB.ob.attempt, session:"onboarding" });
+  const o = DB.ob;
+  if (r === "interest")    o.state = "DONE_HIT";
+  else if (r === "fear")   o.state = "DONE_FEAR";
+  else if (r === "absent"){ o.state = "PAUSED"; o.pausedAt = today();
+    o.played = o.played.filter(id => id !== s.id); }   // 牠不在＝這個聲音沒測到，回來時重放同一個
+  else if (o.attempt >= 3) o.state = "DONE_NONE";
+  else { o.attempt++; o.replays = 0; o.state = "PLAYING"; }
+  save(); render();
+}
+function dailyPlay(){
+  const idx = DB.pro ? PICK : 0;
+  const s = byId(DB.stash[idx]);
+  playSound(s.id); PLAYING = true; render();
+  setTimeout(() => {
+    PLAYING = false;
+    const v = el("view"); v.className = "view center";
+    v.innerHTML = `<p class="ask"><em>${who()}</em> 對「${esc(s.n)}」有反應嗎？</p>
+      <button type="button" class="btn interest" data-d="interest">牠有反應，轉頭或靠過來</button>
+      <button type="button" class="btn fear" data-d="fear">牠被嚇到，躲開了</button>
+      <button type="button" class="btn" data-d="none">沒反應</button>
+      <button type="button" class="btn" data-d="absent">牠不在旁邊</button>`;
+    v.querySelectorAll("[data-d]").forEach(b => b.addEventListener("click", () => {
+      const prev = isRetest(s.id) ? lastRecord(s.id) : null;
+      writeLog({ soundId:s.id, name:s.n, cat:s.cat, reaction:b.dataset.d, session:"daily" });
+      rollDay(); DB.day.played++; DB.stash.splice(idx, 1); PICK = 0;
+      if (prev) MSG = "重測：" + md(prev.date) + " " + RLG[prev.reaction] + " → 今天 " + RLG[b.dataset.d] +
+        (prev.reaction === b.dataset.d ? "，跟上次一樣" : "，反應變了，記下來了");
+      VIEW = "today"; save(); render();
+    }));
+    panel();
+  }, 2600);
+}
+
+el("nav").addEventListener("click", e => { const b = e.target.closest("[data-v]");
+  if (b){ VIEW = b.dataset.v; EDIT = -1; ANIMVIEW = -1; render(); } });
+
+/* ---- 審閱面板 ---- */
+el("cog").addEventListener("click", () => {
+  const sh = el("sheet");
+  if (!sh.hidden){ sh.hidden = true; return; }
+  sh.hidden = false;
+  sh.innerHTML = `<span class="hd">審閱工具（不屬於產品）</span>
+    <button type="button" id="pro">方案：${DB.pro ? "Pro（每天 2 個・存 5・可自選）" : "免費（每天 1 個・存 3）"}</button>
+    <button type="button" id="tm">測試模式：${DB.testMode ? "開（全部限制解除）" : "關"}</button>
+    <button type="button" id="demo">載入 14 天示範資料</button>
+    <button type="button" id="fill">補 3 個聲音到存量</button>
+    ${DB.log.some(r => r.demo) ? `<button type="button" id="undemo">只清掉示範資料（保留你自己記的）</button>` : ""}
+    <button type="button" id="jf">跳到 害怕分支</button>
+    <button type="button" id="jn">跳到 零命中分支</button>
+    <button type="button" id="rs2">清空所有資料，從頭開始</button>
+    <button type="button" id="cl">關閉</button>`;
+  el("pro").onclick = () => { DB.pro = !DB.pro; if (DB.pro) give(1); save(); sh.hidden = true; render(); };
+  el("tm").onclick = () => { DB.testMode = !DB.testMode; save(); sh.hidden = true; render(); };
+  el("demo").onclick = () => { seedDemo(); VIEW = "prefs"; sh.hidden = true;
+    MSG = "已載入 14 天示範資料（刻意空三天，摘要才看得到缺漏）"; render(); };
+  el("fill").onclick = () => { const n = give(3); DB.day.played = 0; save(); sh.hidden = true;
+    MSG = "補了 " + n + " 個聲音，今天的互動次數也重置了"; render(); };
+  const ud = el("undemo");
+  if (ud) ud.onclick = () => {
+    const before = DB.log.length;
+    DB.log = DB.log.filter(r => !r.demo);
+    DB.care = DB.care.filter(c => !c.demo); DB.careHist = DB.careHist.filter(h => !h.demo);
+    const live = new Set(DB.log.map(r => r.soundId));
+    DB.favs = DB.favs.filter(id => live.has(id));      // 愛心是從示範紀錄來的就一起清掉
+    save(); sh.hidden = true;
+    MSG = "清掉 " + (before - DB.log.length) + " 筆示範資料，你自己記的都還在"; render(); };
+  el("cl").onclick = () => sh.hidden = true;
+  el("rs2").onclick = () => { DB = FRESH(); VIEW = "ob"; save(); sh.hidden = true; render(); };
+  el("jf").onclick = () => { seed("fear"); sh.hidden = true; render(); };
+  el("jn").onclick = () => { seed("none"); sh.hidden = true; render(); };
+});
+/* 載入 14 天示範資料 —— 審閱用，不然偏好、摘要、動畫全都是空殼。
+   刻意空掉三天，好讓摘要的「缺漏天數」那一行真的出現。 */
+function seedDemo(){
+  const name = (DB.pet && DB.pet.name) || "小花";
+  DB.pet = { name, species:"cat", createdAt: Date.now() };
+  DB.log = []; DB.favs = []; DB.stash = []; DB.anims = []; DB.customs = [];
+  const pool = ["snd_bird_chirp","snd_mouse","snd_sparrow","snd_can_open","snd_bag_tear",
+                "snd_kitten_mew","snd_bell","snd_bowl_tap","snd_insect","snd_purr","snd_fridge"];
+  const notes = ["今天吃得比較少，睡了一整個下午", "半夜一直叫，可能是想出去",
+                 "貓砂用量比平常多", "對窗外的鳥叫反應很大",
+                 "今天很黏人，一直跟著我", "吐了一次毛球"];
+  let ni = 0;
+  for (let d = 14; d >= 1; d--){
+    if (d === 11 || d === 8 || d === 4) continue;          // 刻意空三天
+    const date = shiftDate(d), s = byId(pool[(14 - d) % pool.length]);
+    // 明確的反應表：有反應的剛好 6 種（滿足動畫解鎖門檻），狩獵類 7/9 最高，第 5 天呼嚕聲被嚇到
+    //   14 鳥 13 老鼠 12 麻雀 10 撕飼料袋 9 幼貓 7 敲碗 6 蟲 5 呼嚕 3 鳥 2 老鼠 1 麻雀
+    const r = ({ 14:"interest", 13:"interest", 12:"none", 10:"interest", 9:"interest", 7:"none",
+                 6:"interest", 5:"fear", 3:"interest", 2:"interest", 1:"interest" })[d] || "none";
+    DB.log.push({ ts: Date.now() - d*864e5, date, soundId:s.id, name:s.n, cat:s.cat,
+                  reaction:r, session:"daily", demo:true });
+    if (d % 3 === 0 && ni < notes.length)
+      DB.log.push({ ts: Date.now() - d*864e5 + 1e3, date, type:"note",
+                    note: notes[ni++], session:"daily", demo:true });
+  }
+  // 兩組重測：鳥叫反應變了、老鼠一致 —— 毛孩頁的重測對照才有東西看
+  [["snd_bird_chirp", 1, "none"], ["snd_mouse", 2, "interest"]].forEach(([id, d, r]) => { const s = byId(id);
+    DB.log.push({ ts: Date.now() - d*864e5 + 2e3, date: shiftDate(d), soundId:id, name:s.n, cat:s.cat,
+                  reaction:r, session:"daily", demo:true }); });
+  DB.log.sort((a, b) => a.ts - b.ts);
+  // 疫苗驅蟲：一個快到期、一個逾期、一筆歷史
+  DB.care = [ { id:"c1", kind:"疫苗", name:"三合一", next:plus(2), lead:3, on:true, demo:true },
+              { id:"c2", kind:"驅蟲", name:"體內外驅蟲", next:plus(-3), lead:1, on:true, demo:true } ];
+  DB.careHist = [ { date:shiftDate(40), kind:"疫苗", name:"狂犬病", demo:true } ];
+  DB.favs = [...new Set(DB.log.filter(r => r.reaction === "interest").map(r => r.soundId))].slice(0, 6);
+  DB.obDone = true; DB.day = { date: today(), played: 0, earned: 0 };
+  give(3); save();
+}
+
+function seed(kind){
+  DB = FRESH(); DB.pet = { name:"小花", species:"cat", createdAt:Date.now() };
+  if (kind === "fear"){ const s = OB_POOL[0];
+    writeLog({ soundId:s.id, name:s.n, cat:s.cat, reaction:"fear", attempt:1, session:"onboarding" });
+    DB.ob.state = "DONE_FEAR"; }
+  else { OB_POOL.forEach((s,i) =>
+      writeLog({ soundId:s.id, name:s.n, cat:s.cat, reaction:"none", attempt:i+1, session:"onboarding" }));
+    DB.ob.attempt = 5; DB.ob.state = "DONE_NONE"; }
+  save();
+}
+
+/* ===================== 右欄（桌機） ===================== */
+const NOTE = {
+  NAMING:"唯一的輸入畫面。名字之外不問任何東西 —— 品種、生日、體重、病史這一次完全用不到。",
+  PLAYING:"畫面只有一個主動作。播放前先把輸出音量夾在上限，不受系統音量影響超過上限。",
+  REPORTING:"「有反應」與「被嚇到」必須分開 —— 被吸塵器嚇走也是強烈反應，存成「喜歡」就完了。",
+  DONE_HIT:"紀錄卡由下方滑入 400ms，這是使用者第一次看到「東西被存起來」的視覺確認。",
+  DONE_FEAR:"不是失敗分支。App 主動保護牠的貓，建立的信任比拿到一個「喜歡的聲音」更強。",
+  DONE_NONE:"五個都沒反應仍然是成功 —— 已經存了五筆真實紀錄，行為基線從第一天開始長。",
+  PAUSED:"不是結束，是保存。下次開啟 App，今日卡會顯示「繼續幫牠找喜歡的聲音」。",
+  today:"日常每天只推一個聲音，絕不連放。聲音是鉤子，「說一句」才是價值 —— 後者永不主動提醒。",
+  favs:"跟「互動」是兩件事：互動＝發現新聲音（消耗制），專屬＝已知牠喜歡的（永久、可重播）。發現要計量，陪貓玩不該計量。",
+  timeline:"互動與觀察寫在同一條時間軸。使用者以為在跟貓玩，App 在累積行為基線。愛心把聲音收進專屬區。",
+  prefs:"摘要在畫面上永遠免費 —— 獸醫是通路，收費等於堵住通路。付費買的是「帶走」：PDF、分享連結、列印。"
+};
+const RULES = {
+  NAMING:[["名字必填 1–10 字，為空時「開始」維持 disabled"],["不要求登入、不要求 email"],
+    ["不問物種 —— 第一版只做貓，直接寫明"],["名字存本機 <code>pet.name</code>，文案以 <code>{name}</code> 代入"]],
+  PLAYING:[["音檔 3–5 秒，播完延遲 1.5 秒自動進回報"],["同一次流程不得重複同一個聲音"],
+    ["★ 這頁不放「再播一次」—— 會自動轉場，按鈕點不到", 1],["常駐安全提示，不可摺疊"]],
+  REPORTING:[["四個按鈕等寬、固定順序、不可折疊"],["「靠過來」與「躲開」必須有明確視覺區分"],
+    ["「躲開」不可使用紅色警示色 —— 它是正常結果", 1],["「再播一次」做成底線小字，上限 3 次"]],
+  DONE_HIT:[["文案：已為您保存 <code>{name}</code> 喜歡的聲音"],["紀錄卡滑入 400ms，不可省略"],
+    ["不在此畫面要求註冊、評分或推播權限", 1]],
+  DONE_FEAR:[["不可出現「喜歡」二字", 1],["不可使用紅色或警示視覺", 1],
+    ["寫入 <code>sound_avoid</code>，永久不再推"],["流程在此結束，即使 attempt_n &lt; 5"]],
+  DONE_NONE:[["「再試一次」每日上限 2 輪"],["5 筆 none 正常寫入，計入行為基線"],
+    ["禁止字：失敗 · 沒找到 · 很可惜", 1]],
+  PAUSED:[["保存已完成的 attempts，absent 本身也寫一筆"],["「繼續」接續，<code>attempt_n</code> 不重置"],
+    ["超過 7 天未繼續，自動結案"]],
+  today:[["一鍵快記：點一下就記，一樣換聲音，可復原（v8 p13）"],
+    ["重測：同一個聲音隔 7 天以上再放會標「重測」，回報後顯示前後對照（正式版 30 天）"],
+    ["今日提醒：疫苗驅蟲逾期、今天到期、提前期內的項目浮到最上面"],
+    ["發放：免費 1／天，Pro 2／天。存滿就不發 —— 滿了是來用掉的拉力"],
+    ["存量：免費 3，Pro 5。★ 刻意小 —— 存太多人會攢著一次放完，同時毀掉每日回訪與貓的耳朵", 1],
+    ["★ 播放每天上限 3 次，不分等級 —— 這是動物安全規定，不是可以賣的東西", 1],
+    ["換取：寫一筆 +1，兩種等級一樣，每天最多 2 次 —— Pro 也要寫才夠用"],
+    ["Pro 賣的是「發放速率」與「自己挑哪一個」，不是繞過機制", 1],
+    ["連續天數改「本月記錄 N 天」—— 會斷的連續紀錄，斷掉那天就是退出那天", 1],
+    ["原型不支援錄音，正式版語音優先", 1]],
+  favs:[["動畫：收集 6 個專屬聲音解鎖。免費存 2 張，Pro 無限"],
+    ["★ 動畫本體由一般程式畫，不經過 LLM —— 確定性是「專屬」的前提，每次不一樣就不是牠的", 1],
+    ["種子取自名字＋主導類別，決定運動模式、物件密度與色調。同一隻貓永遠長一樣"],
+    ["★ LLM 唯一合理的位置是那一句文案，而且要程式驗證：只能引用類別、次數、天數", 1],
+    ["★ 配色用貓看得見的範圍（藍 450nm／黃綠 550-560nm）。這是生理事實，可引用", 1],
+    ["★ 不得宣稱「你的貓偏好某顏色」—— 查不到任何對照實驗支持，那是行銷外推", 1],
+    ["動作比顏色重要得多，所以動畫以移動為主角，耳朵會朝向移動物件"],
+    ["浮水印不可用付費移除 —— 那是成長機制本身。Pro 給更多樣式，不是拿掉標記", 1],
+    ["專屬聲音可重複播，★ 不計入每日互動次數 —— 陪貓玩不該被計量", 1],
+    ["★ 正式版這裡仍需要單次連播上限（動物安全），原型未做", 1],
+    ["害怕的聲音不給愛心 —— 它在 <code>sound_avoid</code> 裡"],
+    ["自訂錄音：免費 1 個，Pro 無限"],
+    ["原型用上傳代替錄音 —— 瀏覽器拿不到麥克風權限", 1],
+    ["自訂音檔一樣走限幅器，上限與內建聲音相同"]],
+  timeline:[["聲音紀錄與自由觀察同一條軸，可篩選「聲音／觀察」"],["愛心把聲音收進專屬區"],
+    ["★ 每筆都能修改與刪除 —— 首次流程沒有返回鍵，點錯就在這裡改", 1],
+    ["反應改成「被嚇到」會自動從專屬區拿掉"],["看診摘要由此期間計算"]],
+  prefs:[["基本資料分次拿：Day 7 問年齡、Day 14 問品種，每次都要給理由"],
+    ["★ 疫苗驅蟲日期由飼主照獸醫安排填，App 不推算週期；「已施作」不自動續排", 1],
+    ["提前 0／1／3／7 天提醒；保留施作歷史；原型不發手機通知"],
+    ["重測對照是 Pro —— 全站唯一競品沒有的東西。反應變了不等於有問題，措辭不診斷"],
+    ["★ 沒有用途就不問 —— 每個欄位都要說得出它會出現在哪裡", 1],
+    ["偏好第 7 天解鎖，之前顯示進度"],
+    ["摘要要列：期間、筆數、反應性、觀察、★ 缺漏天數、未記錄不等於正常", 1],
+    ["★ 摘要「看」免費、「帶走」付費 —— 獸醫是通路，不能堵住", 1],
+    ["付費觸發就在這裡，不是安裝第一天。試用 14 天不綁卡"],
+    ["不得呈現為診斷或健康結論", 1]]
+};
+function panel(){
+  const st = DB.obDone ? VIEW : DB.ob.state;
+  let b = `<span class="chip">${st}</span>`;
+  if (DB.pet) b += `<span class="kv">pet.name = ${esc(DB.pet.name)}</span>`;
+  if (!DB.obDone && (st === "PLAYING" || st === "REPORTING")){
+    b += `<span class="kv">attempt_n = ${DB.ob.attempt}/5</span><span class="kv">${obSound().id}</span>`; }
+  if (DB.obDone) b += `<span class="kv">記錄 ${new Set(DB.log.map(r=>r.date)).size} 天</span>`;
+  if (DB.testMode) b += `<span class="kv">測試模式</span>`;
+  el("statebar").innerHTML = b;
+  el("statenote").textContent = NOTE[st] || "";
+
+  const box = el("logbox");
+  if (!DB.log.length){
+    box.innerHTML = `<p class="empty" style="text-align:left">還沒有紀錄。走完流程，這裡會逐筆長出來 —— 包括「沒反應」。五個聲音都沒中的那一場，這張表仍然會有五筆。</p>`;
+  } else {
+    box.innerHTML = `<div class="tablewrap"><table>
+      <thead><tr><th>#</th><th>date</th><th>sound</th><th>category</th><th>reaction</th><th>session</th></tr></thead>
+      <tbody>${DB.log.map((r,i)=>`<tr><td class="n">${i+1}</td><td class="n">${md(r.date)}</td>
+        <td>${r.type==="note" ? "（觀察）" : esc(r.name)}</td><td>${r.type==="note" ? "—" : r.cat}</td>
+        <td>${r.type==="note" ? "note" : r.reaction}</td><td>${r.session}</td></tr>`).join("")}</tbody></table></div>
+      <p class="note">共 ${DB.log.length} 筆，全部存在本機瀏覽器，沒有上傳。</p>`;
+  }
+  el("rules").innerHTML = (RULES[st]||[]).map(r => `<li${r[1]?' class="no"':""}>${r[0]}</li>`).join("");
+}
+
+/* ===================== 啟動 ===================== */
+load();
+if (DB.obDone) VIEW = "today";
+render();
+</script>
+
+</body>
+</html>
